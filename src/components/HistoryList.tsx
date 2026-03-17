@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CURRENCY_SYMBOL } from "@/lib/constants";
-import { autoGridCols } from "@/lib/grid";
+
 import { deleteExpense, getExpenses, updateExpense } from "@/lib/actions";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Input } from "@/components/ui/input";
@@ -118,7 +118,7 @@ function EditExpenseSheet({
   };
 
   return (
-    <div className="space-y-5 mt-4 max-h-[70vh] overflow-y-auto pb-4">
+    <div className="mx-auto max-w-lg space-y-4 mt-4 max-h-[70vh] overflow-y-auto pb-4">
       {/* Amount */}
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</Label>
@@ -139,7 +139,7 @@ function EditExpenseSheet({
       {/* Category */}
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
-        <div className={cn("grid gap-1.5", autoGridCols(categories.length))}>
+        <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
           {categories.map((cat) => {
             const isSelected = categoryId === cat.id;
             return (
@@ -172,7 +172,7 @@ function EditExpenseSheet({
       {/* Payment */}
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</Label>
-        <div className={cn("grid gap-1.5", autoGridCols(paymentMethods.length))}>
+        <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
           {paymentMethods.map((pm) => {
             const isSelected = paymentMethodId === pm.id;
             return (
@@ -202,30 +202,32 @@ function EditExpenseSheet({
         </div>
       </div>
 
-      {/* Date */}
-      <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</Label>
-        <Popover>
-          <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-xl border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors">
-            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-            {format(date, "PPP")}
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 rounded-xl" align="start">
-            <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
-          </PopoverContent>
-        </Popover>
+      {/* Date + Description */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</Label>
+          <Popover>
+            <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-xl border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors">
+              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+              {format(date, "PPP")}
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+              <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</Label>
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What was this for?"
+            className="rounded-xl"
+          />
+        </div>
       </div>
 
-      {/* Description & Notes */}
-      <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</Label>
-        <Input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="What was this for?"
-          className="rounded-xl"
-        />
-      </div>
+      {/* Notes */}
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</Label>
         <Input
