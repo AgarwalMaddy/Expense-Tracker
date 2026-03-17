@@ -29,15 +29,15 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
 
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("UPI");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState<Date>(new Date());
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const handleSubmit = () => {
-    if (!amount || !categoryId) {
-      toast.error("Amount and category are required");
+    if (!amount || !categoryId || !paymentMethod) {
+      toast.error("Amount, category, and payment method are required");
       return;
     }
 
