@@ -236,10 +236,10 @@ function EditExpenseSheet({
         />
       </div>
 
-      {/* Tags */}
+      {/* Labels */}
       {tags.length > 0 && (
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tags</Label>
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Labels</Label>
           <div className="flex flex-wrap gap-1.5">
             {tags.map((tag) => (
               <button

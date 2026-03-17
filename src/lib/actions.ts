@@ -270,12 +270,12 @@ export async function getDashboardData() {
         _sum: { amount: true },
       }),
       prisma.$queryRaw`
-        SELECT DATE("expenseDate") as date, SUM(amount) as total
+        SELECT DATE("expenseDate" AT TIME ZONE 'Asia/Kolkata') as date, SUM(amount) as total
         FROM expenses
         WHERE "userId" = ${userId}
           AND "expenseDate" >= ${startOfMonth}
           AND "expenseDate" <= ${endOfMonth}
-        GROUP BY DATE("expenseDate")
+        GROUP BY DATE("expenseDate" AT TIME ZONE 'Asia/Kolkata')
         ORDER BY date ASC
       ` as Promise<Array<{ date: Date; total: number }>>,
       prisma.expense.findMany({
@@ -308,10 +308,13 @@ export async function getDashboardData() {
       paymentMethod: pmMap.get(p.paymentMethodId)!,
       total: Number(p._sum.amount || 0),
     })),
-    dailyTrend: dailyTrend.map((d) => ({
-      date: d.date.toISOString().split("T")[0],
-      total: Number(d.total),
-    })),
+    dailyTrend: dailyTrend.map((d) => {
+      const dt = new Date(d.date);
+      const yyyy = dt.getFullYear();
+      const mm = String(dt.getMonth() + 1).padStart(2, "0");
+      const dd = String(dt.getDate()).padStart(2, "0");
+      return { date: `${yyyy}-${mm}-${dd}`, total: Number(d.total) };
+    }),
     recentExpenses,
   };
 }

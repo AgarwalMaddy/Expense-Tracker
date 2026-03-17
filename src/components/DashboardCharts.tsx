@@ -39,6 +39,7 @@ const tooltipStyle = {
     boxShadow: "0 8px 30px oklch(0 0 0 / 0.08)",
     padding: "8px 12px",
     fontSize: "13px",
+    background: "var(--color-card)",
   },
 };
 
@@ -112,10 +113,13 @@ export function DailyBarChart({ data }: { data: DailyData[] }) {
   return (
     <ResponsiveContainer width="100%" height={200}>
       <BarChart data={data} barCategoryGap="20%">
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.915 0.008 260)" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.915 0.008 260 / 0.3)" />
         <XAxis
           dataKey="date"
-          tickFormatter={(v: string) => new Date(v).getDate().toString()}
+          tickFormatter={(v: string) => {
+            const [, , d] = v.split("-");
+            return String(parseInt(d, 10));
+          }}
           fontSize={11}
           tickLine={false}
           axisLine={false}
@@ -130,13 +134,13 @@ export function DailyBarChart({ data }: { data: DailyData[] }) {
         />
         <Tooltip
           {...tooltipStyle}
-          formatter={(value) => `${CURRENCY_SYMBOL}${Number(value).toLocaleString("en-IN")}`}
-          labelFormatter={(label) =>
-            new Date(String(label)).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-            })
-          }
+          cursor={false}
+          formatter={(value) => [`${CURRENCY_SYMBOL}${Number(value).toLocaleString("en-IN")}`, ""]}
+          labelFormatter={(label) => {
+            const [y, m, d] = String(label).split("-");
+            const dt = new Date(Number(y), Number(m) - 1, Number(d));
+            return dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+          }}
         />
         <defs>
           <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
@@ -178,11 +182,16 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
               className="space-y-2"
             >
               <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2.5">
-                  <CategoryIcon name={pm.icon} color={pm.color} size="sm" />
-                  <span className="font-medium">{pm.name}</span>
+                <span className="flex items-center gap-2 min-w-0">
+                  <div
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: `${pm.color}15` }}
+                  >
+                    <CategoryIcon name={pm.icon} size="sm" className="!h-3.5 !w-3.5" />
+                  </div>
+                  <span className="truncate font-medium">{pm.name}</span>
                 </span>
-                <span className="font-semibold tabular-nums">
+                <span className="shrink-0 ml-2 font-semibold tabular-nums">
                   {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}
                   <span className="ml-1.5 text-xs font-normal text-muted-foreground">({pct}%)</span>
                 </span>

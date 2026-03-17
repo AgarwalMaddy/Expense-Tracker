@@ -238,10 +238,10 @@ export function AddExpenseForm({ categories, tags, paymentMethods }: AddExpenseF
         />
       </div>
 
-      {/* Tags */}
+      {/* Labels */}
       {tags.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tags</Label>
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Labels</Label>
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <motion.button

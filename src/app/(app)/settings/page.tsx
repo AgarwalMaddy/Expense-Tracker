@@ -26,10 +26,10 @@ export default function SettingsPage() {
     startTransition(async () => {
       try {
         await createTag(tagName);
-        toast.success(`Tag "${tagName}" created`);
+        toast.success(`Label "${tagName}" created`);
         setTagName("");
       } catch {
-        toast.error("Failed to create tag");
+        toast.error("Failed to create label");
       }
     });
   };
@@ -68,13 +68,13 @@ export default function SettingsPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
               <Tag className="h-4 w-4 text-primary" />
             </div>
-            Create Tag
+            Create Label
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
             <Input
-              placeholder="e.g. recurring, impulse, needs"
+              placeholder="e.g. recurring, impulse, essential"
               value={tagName}
               onChange={(e) => setTagName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
