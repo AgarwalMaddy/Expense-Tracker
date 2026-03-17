@@ -161,12 +161,12 @@ export async function getDashboardData() {
         _sum: { amount: true },
       }),
       prisma.$queryRaw`
-        SELECT DATE(expense_date) as date, SUM(amount) as total
+        SELECT DATE("expenseDate") as date, SUM(amount) as total
         FROM expenses
-        WHERE user_id = ${userId}
-          AND expense_date >= ${startOfMonth}
-          AND expense_date <= ${endOfMonth}
-        GROUP BY DATE(expense_date)
+        WHERE "userId" = ${userId}
+          AND "expenseDate" >= ${startOfMonth}
+          AND "expenseDate" <= ${endOfMonth}
+        GROUP BY DATE("expenseDate")
         ORDER BY date ASC
       ` as Promise<Array<{ date: Date; total: number }>>,
       prisma.expense.findMany({
