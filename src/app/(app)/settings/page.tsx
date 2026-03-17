@@ -28,7 +28,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md space-y-4 p-4">
+    <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-8">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Create Tag</CardTitle>

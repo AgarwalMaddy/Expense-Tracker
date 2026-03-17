@@ -12,21 +12,47 @@ async function getUserId(): Promise<string> {
   return session.user.id;
 }
 
+const EMOJI_TO_LUCIDE: Record<string, string> = {
+  "🍔": "utensils-crossed",
+  "🚗": "car",
+  "🛒": "shopping-cart",
+  "🛍️": "shopping-bag",
+  "💊": "heart-pulse",
+  "📄": "file-text",
+  "🎬": "clapperboard",
+  "🏠": "house",
+  "📚": "graduation-cap",
+  "✨": "sparkles",
+  "📦": "package",
+};
+
 export async function ensureDefaultCategories() {
   const userId = await getUserId();
 
-  const existing = await prisma.category.count({ where: { userId } });
-  if (existing > 0) return;
+  const existing = await prisma.category.findMany({ where: { userId } });
 
-  await prisma.category.createMany({
-    data: DEFAULT_CATEGORIES.map((c) => ({
-      userId,
-      name: c.name,
-      icon: c.icon,
-      color: c.color,
-      isDefault: true,
-    })),
-  });
+  if (existing.length === 0) {
+    await prisma.category.createMany({
+      data: DEFAULT_CATEGORIES.map((c) => ({
+        userId,
+        name: c.name,
+        icon: c.icon,
+        color: c.color,
+        isDefault: true,
+      })),
+    });
+    return;
+  }
+
+  for (const cat of existing) {
+    const lucideName = EMOJI_TO_LUCIDE[cat.icon];
+    if (lucideName) {
+      await prisma.category.update({
+        where: { id: cat.id },
+        data: { icon: lucideName },
+      });
+    }
+  }
 }
 
 export async function getCategories() {

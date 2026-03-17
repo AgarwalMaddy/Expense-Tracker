@@ -13,6 +13,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { CURRENCY_SYMBOL } from "@/lib/constants";
+import { CategoryIcon } from "@/components/CategoryIcon";
+import {
+  Banknote, Smartphone, CreditCard, Globe, type LucideIcon,
+} from "lucide-react";
 
 interface CategoryData {
   category: { name: string; icon: string; color: string };
@@ -61,18 +65,15 @@ export function CategoryPieChart({ data }: { data: CategoryData[] }) {
           />
         </PieChart>
       </ResponsiveContainer>
-      <div className="flex flex-1 flex-col gap-1.5">
+      <div className="flex flex-1 flex-col gap-2">
         {data
           .sort((a, b) => b.total - a.total)
           .slice(0, 5)
           .map((entry) => (
-            <div key={entry.category.name} className="flex items-center gap-2 text-xs">
-              <div
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: entry.category.color }}
-              />
-              <span className="flex-1 truncate">{entry.category.icon} {entry.category.name}</span>
-              <span className="font-medium">
+            <div key={entry.category.name} className="flex items-center gap-2.5 text-xs">
+              <CategoryIcon name={entry.category.icon} color={entry.category.color} size="sm" />
+              <span className="flex-1 truncate font-medium">{entry.category.name}</span>
+              <span className="font-semibold tabular-nums">
                 {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}
               </span>
             </div>
@@ -118,9 +119,22 @@ export function DailyBarChart({ data }: { data: DailyData[] }) {
   );
 }
 
+const PAYMENT_ICONS: Record<string, LucideIcon> = {
+  CASH: Banknote,
+  UPI: Smartphone,
+  CARD: CreditCard,
+  ONLINE: Globe,
+};
+
+const PAYMENT_COLORS: Record<string, string> = {
+  CASH: "#22c55e",
+  UPI: "#8b5cf6",
+  CARD: "#3b82f6",
+  ONLINE: "#f97316",
+};
+
 export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
   const total = data.reduce((sum, d) => sum + d.total, 0);
-  const ICONS: Record<string, string> = { CASH: "💵", UPI: "📱", CARD: "💳", ONLINE: "🌐" };
 
   if (total === 0) {
     return (
@@ -131,26 +145,35 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {data
         .filter((d) => d.total > 0)
         .sort((a, b) => b.total - a.total)
         .map((entry) => {
           const pct = ((entry.total / total) * 100).toFixed(0);
+          const Icon = PAYMENT_ICONS[entry.method] || Globe;
+          const color = PAYMENT_COLORS[entry.method] || "#6b7280";
           return (
-            <div key={entry.method} className="space-y-1">
+            <div key={entry.method} className="space-y-1.5">
               <div className="flex items-center justify-between text-sm">
-                <span>
-                  {ICONS[entry.method] || ""} {entry.method}
+                <span className="flex items-center gap-2">
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: `${color}15` }}
+                  >
+                    <Icon className="h-3.5 w-3.5" style={{ color }} />
+                  </div>
+                  <span className="font-medium">{entry.method}</span>
                 </span>
-                <span className="font-medium">
-                  {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")} ({pct}%)
+                <span className="font-semibold tabular-nums">
+                  {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">({pct}%)</span>
                 </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-primary transition-all"
-                  style={{ width: `${pct}%` }}
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${pct}%`, backgroundColor: color }}
                 />
               </div>
             </div>

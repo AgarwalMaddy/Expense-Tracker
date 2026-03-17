@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CURRENCY_SYMBOL, PAYMENT_METHODS } from "@/lib/constants";
 import { deleteExpense, getExpenses } from "@/lib/actions";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -110,7 +111,7 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
                 <SelectContent>
                   {categories.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.icon} {c.name}
+                      {c.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -123,7 +124,7 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
                 <SelectContent>
                   {PAYMENT_METHODS.map((pm) => (
                     <SelectItem key={pm.value} value={pm.value}>
-                      {pm.icon} {pm.label}
+                      {pm.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -144,7 +145,7 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
         </Sheet>
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs font-medium text-muted-foreground">
         {count} expense{count !== 1 ? "s" : ""}
       </p>
 
@@ -160,7 +161,11 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
                 isPending && "opacity-50"
               )}
             >
-              <span className="text-2xl">{expense.category.icon}</span>
+              <CategoryIcon
+                name={expense.category.icon}
+                color={expense.category.color}
+                size="md"
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
                   {expense.description || expense.category.name}
@@ -181,12 +186,12 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
                 )}
               </div>
               <div className="flex flex-col items-end gap-1">
-                <p className="text-sm font-semibold">
+                <p className="text-sm font-semibold tabular-nums">
                   {CURRENCY_SYMBOL}{Number(expense.amount).toLocaleString("en-IN")}
                 </p>
                 <button
                   onClick={() => handleDelete(expense.id)}
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive transition-colors"
                   disabled={isPending}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

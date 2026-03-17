@@ -1,22 +1,22 @@
 export const DEFAULT_CATEGORIES = [
-  { name: "Food", icon: "🍔", color: "#f97316" },
-  { name: "Transport", icon: "🚗", color: "#3b82f6" },
-  { name: "Groceries", icon: "🛒", color: "#22c55e" },
-  { name: "Shopping", icon: "🛍️", color: "#ec4899" },
-  { name: "Health", icon: "💊", color: "#ef4444" },
-  { name: "Bills", icon: "📄", color: "#8b5cf6" },
-  { name: "Entertainment", icon: "🎬", color: "#eab308" },
-  { name: "Rent", icon: "🏠", color: "#06b6d4" },
-  { name: "Education", icon: "📚", color: "#14b8a6" },
-  { name: "Personal Care", icon: "✨", color: "#f43f5e" },
-  { name: "Misc", icon: "📦", color: "#6b7280" },
+  { name: "Food", icon: "utensils-crossed", color: "#f97316" },
+  { name: "Transport", icon: "car", color: "#3b82f6" },
+  { name: "Groceries", icon: "shopping-cart", color: "#22c55e" },
+  { name: "Shopping", icon: "shopping-bag", color: "#ec4899" },
+  { name: "Health", icon: "heart-pulse", color: "#ef4444" },
+  { name: "Bills", icon: "file-text", color: "#8b5cf6" },
+  { name: "Entertainment", icon: "clapperboard", color: "#eab308" },
+  { name: "Rent", icon: "house", color: "#06b6d4" },
+  { name: "Education", icon: "graduation-cap", color: "#14b8a6" },
+  { name: "Personal Care", icon: "sparkles", color: "#f43f5e" },
+  { name: "Misc", icon: "package", color: "#6b7280" },
 ] as const;
 
 export const PAYMENT_METHODS = [
-  { value: "CASH", label: "Cash", icon: "💵" },
-  { value: "UPI", label: "UPI", icon: "📱" },
-  { value: "CARD", label: "Card", icon: "💳" },
-  { value: "ONLINE", label: "Online", icon: "🌐" },
+  { value: "CASH", label: "Cash", icon: "banknote" },
+  { value: "UPI", label: "UPI", icon: "smartphone" },
+  { value: "CARD", label: "Card", icon: "credit-card" },
+  { value: "ONLINE", label: "Online", icon: "globe" },
 ] as const;
 
 export const CURRENCY_SYMBOL = "₹";

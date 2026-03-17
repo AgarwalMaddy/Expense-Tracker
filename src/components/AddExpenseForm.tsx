@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHODS, CURRENCY_SYMBOL } from "@/lib/constants";
 import { createExpense } from "@/lib/actions";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,7 +66,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
   };
 
   return (
-    <div className="mx-auto max-w-md space-y-6 p-4">
+    <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
       {/* Amount */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
@@ -88,20 +89,20 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
       {/* Category Grid */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-muted-foreground">Category</Label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
           {categories.map((cat) => (
             <button
               key={cat.id}
               type="button"
               onClick={() => setCategoryId(cat.id)}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-xs transition-all active:scale-95",
+                "flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-xs transition-all active:scale-95",
                 categoryId === cat.id
                   ? "border-primary bg-primary/5 shadow-sm"
                   : "border-transparent bg-muted/50 hover:bg-muted"
               )}
             >
-              <span className="text-2xl">{cat.icon}</span>
+              <CategoryIcon name={cat.icon} color={cat.color} size="sm" />
               <span className="truncate font-medium">{cat.name}</span>
             </button>
           ))}
@@ -118,46 +119,48 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
               type="button"
               onClick={() => setPaymentMethod(pm.value)}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-xs transition-all active:scale-95",
+                "flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-xs transition-all active:scale-95",
                 paymentMethod === pm.value
                   ? "border-primary bg-primary/5 shadow-sm"
                   : "border-transparent bg-muted/50 hover:bg-muted"
               )}
             >
-              <span className="text-xl">{pm.icon}</span>
+              <CategoryIcon name={pm.icon} size="sm" />
               <span className="font-medium">{pm.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Date */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">Date</Label>
-        <Popover>
-          <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-left text-sm font-normal ring-offset-background hover:bg-accent hover:text-accent-foreground">
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {format(date, "PPP")}
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(d) => d && setDate(d)}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Date */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+          <Popover>
+            <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-left text-sm font-normal ring-offset-background hover:bg-accent hover:text-accent-foreground">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {format(date, "PPP")}
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(d) => d && setDate(d)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
 
-      {/* Description */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">Description</Label>
-        <Input
-          placeholder="What was this for?"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+        {/* Description */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+          <Input
+            placeholder="What was this for?"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Notes */}
@@ -204,7 +207,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
       <Button
         onClick={handleSubmit}
         disabled={isPending || !amount || !categoryId}
-        className="h-14 w-full text-lg font-semibold"
+        className="h-14 w-full text-base font-semibold md:w-auto md:px-12"
         size="lg"
       >
         {isPending ? "Adding..." : "Add Expense"}

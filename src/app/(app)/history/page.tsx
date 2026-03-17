@@ -10,7 +10,7 @@ export default async function HistoryPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-md p-4">
+    <div className="mx-auto max-w-3xl p-4 md:p-8">
       <HistoryList
         initialExpenses={expenses}
         total={total}
