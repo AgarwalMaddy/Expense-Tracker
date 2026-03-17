@@ -59,6 +59,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
         toast.success("Expense added!");
         setAmount("");
         setCategoryId("");
+        setPaymentMethod("");
         setDescription("");
         setNotes("");
         setSelectedTags([]);
