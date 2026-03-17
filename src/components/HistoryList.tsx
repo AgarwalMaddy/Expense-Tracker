@@ -2,16 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { format } from "date-fns";
-import { Trash2, Search, Filter, X } from "lucide-react";
+import { Trash2, Search, Filter, X, Pencil, CalendarIcon, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CURRENCY_SYMBOL, PAYMENT_METHODS } from "@/lib/constants";
-import { deleteExpense, getExpenses } from "@/lib/actions";
+import { deleteExpense, getExpenses, updateExpense } from "@/lib/actions";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -31,14 +34,250 @@ interface HistoryListProps {
   initialExpenses: ExpenseWithRelations[];
   total: number;
   categories: Category[];
+  tags: Tag[];
 }
 
-export function HistoryList({ initialExpenses, total, categories }: HistoryListProps) {
+function EditExpenseSheet({
+  expense,
+  categories,
+  tags,
+  onSave,
+  onClose,
+}: {
+  expense: ExpenseWithRelations;
+  categories: Category[];
+  tags: Tag[];
+  onSave: (updated: ExpenseWithRelations) => void;
+  onClose: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [amount, setAmount] = useState(String(Number(expense.amount)));
+  const [categoryId, setCategoryId] = useState(expense.categoryId);
+  const [paymentMethod, setPaymentMethod] = useState(expense.paymentMethod);
+  const [description, setDescription] = useState(expense.description || "");
+  const [notes, setNotes] = useState(expense.notes || "");
+  const [date, setDate] = useState<Date>(new Date(expense.expenseDate));
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    expense.tags.map((et) => et.tagId)
+  );
+
+  const handleSave = () => {
+    if (!amount || !categoryId || !paymentMethod) {
+      toast.error("Amount, category, and payment are required");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await updateExpense(expense.id, {
+          amount: parseFloat(amount),
+          categoryId,
+          paymentMethod: paymentMethod as "CASH" | "UPI" | "CARD" | "ONLINE",
+          description: description || undefined,
+          notes: notes || undefined,
+          expenseDate: date.toISOString(),
+          tagIds: selectedTags.length > 0 ? selectedTags : undefined,
+        });
+
+        const cat = categories.find((c) => c.id === categoryId)!;
+        onSave({
+          ...expense,
+          amount: parseFloat(amount) as unknown as Expense["amount"],
+          categoryId,
+          category: cat,
+          paymentMethod: paymentMethod as Expense["paymentMethod"],
+          description: description || null,
+          notes: notes || null,
+          expenseDate: date,
+          tags: selectedTags.map((tagId) => ({
+            expenseId: expense.id,
+            tagId,
+            tag: tags.find((t) => t.id === tagId)!,
+          })),
+        });
+
+        toast.success("Expense updated");
+        onClose();
+      } catch {
+        toast.error("Failed to update");
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-5 mt-4 max-h-[70vh] overflow-y-auto pb-4">
+      {/* Amount */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</Label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground/60">
+            {CURRENCY_SYMBOL}
+          </span>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="h-12 pl-8 text-xl font-bold rounded-xl"
+          />
+        </div>
+      </div>
+
+      {/* Category */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {categories.map((cat) => {
+            const isSelected = categoryId === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategoryId(cat.id)}
+                className={cn(
+                  "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                    : "border-transparent bg-muted/40"
+                )}
+              >
+                {isSelected && (
+                  <div className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                    <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
+                  </div>
+                )}
+                <CategoryIcon name={cat.icon} color={cat.color} size="sm" />
+                <span className={cn("truncate font-medium", isSelected && "text-primary font-semibold")}>
+                  {cat.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Payment */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</Label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {PAYMENT_METHODS.map((pm) => {
+            const isSelected = paymentMethod === pm.value;
+            return (
+              <button
+                key={pm.value}
+                type="button"
+                onClick={() => setPaymentMethod(pm.value)}
+                className={cn(
+                  "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                    : "border-transparent bg-muted/40"
+                )}
+              >
+                {isSelected && (
+                  <div className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                    <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
+                  </div>
+                )}
+                <CategoryIcon name={pm.icon} size="sm" />
+                <span className={cn("font-medium", isSelected && "text-primary font-semibold")}>
+                  {pm.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Date */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</Label>
+        <Popover>
+          <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-xl border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors">
+            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+            {format(date, "PPP")}
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+            <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Description & Notes */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</Label>
+        <Input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="What was this for?"
+          className="rounded-xl"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</Label>
+        <Input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Optional notes..."
+          className="rounded-xl"
+        />
+      </div>
+
+      {/* Tags */}
+      {tags.length > 0 && (
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tags</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((tag) => (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={() =>
+                  setSelectedTags((prev) =>
+                    prev.includes(tag.id)
+                      ? prev.filter((t) => t !== tag.id)
+                      : [...prev, tag.id]
+                  )
+                }
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-medium transition-all",
+                  selectedTags.includes(tag.id)
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border/60 hover:bg-muted/70"
+                )}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Save */}
+      <Button
+        onClick={handleSave}
+        disabled={isPending || !amount || !categoryId || !paymentMethod}
+        className="h-12 w-full rounded-xl gradient-primary hover:opacity-90 transition-opacity font-semibold"
+      >
+        {isPending ? (
+          <span className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+          </span>
+        ) : (
+          "Save Changes"
+        )}
+      </Button>
+    </div>
+  );
+}
+
+export function HistoryList({ initialExpenses, total, categories, tags }: HistoryListProps) {
   const [expenses, setExpenses] = useState<ExpenseWithRelations[]>(initialExpenses);
   const [count, setCount] = useState(total);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [paymentFilter, setPaymentFilter] = useState<string>("");
+  const [editingExpense, setEditingExpense] = useState<ExpenseWithRelations | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const handleFilter = () => {
@@ -65,6 +304,10 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
         toast.error("Failed to delete");
       }
     });
+  };
+
+  const handleUpdate = (updated: ExpenseWithRelations) => {
+    setExpenses((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
   };
 
   const clearFilters = () => {
@@ -211,20 +454,49 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
                   <p className="text-sm font-semibold tabular-nums">
                     {CURRENCY_SYMBOL}{Number(expense.amount).toLocaleString("en-IN")}
                   </p>
-                  <motion.button
-                    whileTap={{ scale: 0.8 }}
-                    onClick={() => handleDelete(expense.id)}
-                    className="rounded-lg p-1 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    disabled={isPending}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </motion.button>
+                  <div className="flex items-center gap-1">
+                    <motion.button
+                      whileTap={{ scale: 0.8 }}
+                      onClick={() => setEditingExpense(expense)}
+                      className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors"
+                      disabled={isPending}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.8 }}
+                      onClick={() => handleDelete(expense.id)}
+                      className="rounded-lg p-1 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      disabled={isPending}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </motion.button>
+                  </div>
                 </div>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
       )}
+
+      {/* Edit Sheet */}
+      <Sheet open={!!editingExpense} onOpenChange={(open) => !open && setEditingExpense(null)}>
+        <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh]">
+          <SheetHeader>
+            <SheetTitle className="font-display">Edit Expense</SheetTitle>
+          </SheetHeader>
+          {editingExpense && (
+            <EditExpenseSheet
+              key={editingExpense.id}
+              expense={editingExpense}
+              categories={categories}
+              tags={tags}
+              onSave={handleUpdate}
+              onClose={() => setEditingExpense(null)}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </motion.div>
   );
 }

@@ -154,6 +154,42 @@ export async function getExpenses(params?: {
   return { expenses, total };
 }
 
+export async function updateExpense(
+  id: string,
+  data: {
+    amount: number;
+    categoryId: string;
+    paymentMethod: PaymentMethod;
+    description?: string;
+    notes?: string;
+    expenseDate: string;
+    tagIds?: string[];
+  }
+) {
+  const userId = await getUserId();
+
+  await prisma.expenseTag.deleteMany({ where: { expenseId: id } });
+
+  const expense = await prisma.expense.update({
+    where: { id, userId },
+    data: {
+      amount: data.amount,
+      categoryId: data.categoryId,
+      paymentMethod: data.paymentMethod,
+      description: data.description || null,
+      notes: data.notes || null,
+      expenseDate: new Date(data.expenseDate),
+      tags: data.tagIds?.length
+        ? { create: data.tagIds.map((tagId) => ({ tagId })) }
+        : undefined,
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/history");
+  return expense;
+}
+
 export async function deleteExpense(id: string) {
   const userId = await getUserId();
   await prisma.expense.delete({ where: { id, userId } });
