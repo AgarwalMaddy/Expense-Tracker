@@ -1,6 +1,6 @@
 import { getDashboardData } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CategoryPieChart, DailyBarChart, PaymentBreakdown } from "@/components/DashboardCharts";
+import { CategoryPieChart, PaymentBreakdown } from "@/components/DashboardCharts";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CURRENCY_SYMBOL } from "@/lib/constants";
 import { format } from "date-fns";
@@ -89,15 +89,6 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <CategoryPieChart data={data.categoryBreakdown} />
-            </CardContent>
-          </Card>
-
-          <Card data-animate className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Daily Spending</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DailyBarChart data={data.dailyTrend} />
             </CardContent>
           </Card>
         </div>

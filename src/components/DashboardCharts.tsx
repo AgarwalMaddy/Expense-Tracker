@@ -4,11 +4,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -20,11 +15,6 @@ interface CategoryData {
   category: { name: string; icon: string; color: string };
   total: number;
   count: number;
-}
-
-interface DailyData {
-  date: string;
-  total: number;
 }
 
 interface PaymentData {
@@ -97,61 +87,6 @@ export function CategoryPieChart({ data }: { data: CategoryData[] }) {
             </motion.div>
           ))}
       </div>
-    </div>
-  );
-}
-
-export function DailyBarChart({ data }: { data: DailyData[] }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        No expenses this month
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-hidden">
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.915 0.008 260 / 0.3)" />
-          <XAxis
-            dataKey="date"
-            tickFormatter={(v: string) => {
-              const [, , d] = v.split("-");
-              return String(parseInt(d, 10));
-            }}
-            fontSize={11}
-            tickLine={false}
-            axisLine={false}
-            stroke="oklch(0.52 0.02 261)"
-          />
-          <YAxis
-            fontSize={11}
-            tickLine={false}
-            axisLine={false}
-            width={45}
-            stroke="oklch(0.52 0.02 261)"
-          />
-          <Tooltip
-            {...tooltipStyle}
-            cursor={false}
-            formatter={(value) => [`${CURRENCY_SYMBOL}${Number(value).toLocaleString("en-IN")}`, ""]}
-            labelFormatter={(label) => {
-              const [y, m, d] = String(label).split("-");
-              const dt = new Date(Number(y), Number(m) - 1, Number(d));
-              return dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-            }}
-          />
-          <defs>
-            <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="oklch(0.488 0.243 264)" />
-              <stop offset="100%" stopColor="oklch(0.623 0.214 259)" />
-            </linearGradient>
-          </defs>
-          <Bar dataKey="total" fill="url(#barGrad)" radius={[6, 6, 0, 0]} maxBarSize={60} />
-        </BarChart>
-      </ResponsiveContainer>
     </div>
   );
 }

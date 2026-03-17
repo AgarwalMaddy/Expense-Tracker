@@ -269,7 +269,7 @@ export async function getDashboardData() {
   const startOfMonth = new Date(Date.UTC(istYear, istMonth, 1) - 5.5 * 60 * 60 * 1000);
   const endOfMonth = new Date(Date.UTC(istYear, istMonth + 1, 1) - 5.5 * 60 * 60 * 1000 - 1);
 
-  const [monthlyExpenses, categoryBreakdown, paymentBreakdown, dailyTrend, recentExpenses] =
+  const [monthlyExpenses, categoryBreakdown, paymentBreakdown, recentExpenses] =
     await Promise.all([
       prisma.expense.aggregate({
         where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
@@ -287,16 +287,6 @@ export async function getDashboardData() {
         where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
         _sum: { amount: true },
       }),
-      prisma.$queryRaw`
-        SELECT TO_CHAR(("expenseDate" AT TIME ZONE 'Asia/Kolkata')::date, 'YYYY-MM-DD') as date,
-               SUM(amount) as total
-        FROM expenses
-        WHERE "userId" = ${userId}
-          AND "expenseDate" >= ${startOfMonth}
-          AND "expenseDate" <= ${endOfMonth}
-        GROUP BY ("expenseDate" AT TIME ZONE 'Asia/Kolkata')::date
-        ORDER BY ("expenseDate" AT TIME ZONE 'Asia/Kolkata')::date ASC
-      ` as Promise<Array<{ date: string; total: number }>>,
       prisma.expense.findMany({
         where: { userId },
         include: { category: true, paymentMethod: true },
@@ -326,10 +316,6 @@ export async function getDashboardData() {
     paymentBreakdown: paymentBreakdown.map((p) => ({
       paymentMethod: pmMap.get(p.paymentMethodId)!,
       total: Number(p._sum.amount || 0),
-    })),
-    dailyTrend: dailyTrend.map((d) => ({
-      date: String(d.date),
-      total: Number(d.total),
     })),
     recentExpenses,
   };
