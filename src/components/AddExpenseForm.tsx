@@ -123,7 +123,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods }: AddExpenseF
                 transition={{ duration: 0.3, delay: i * 0.03 }}
                 whileTap={{ scale: 0.93 }}
                 className={cn(
-                  "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
+                  "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all overflow-hidden min-w-0",
                   isSelected
                     ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-md shadow-primary/10"
                     : "border-transparent bg-muted/40 hover:bg-muted/70"
@@ -139,7 +139,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods }: AddExpenseF
                   </motion.div>
                 )}
                 <CategoryIcon name={cat.icon} color={cat.color} size="sm" glow={isSelected} />
-                <span className={cn("truncate font-medium", isSelected && "text-primary font-semibold")}>
+                <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
                   {cat.name}
                 </span>
               </motion.button>
@@ -168,7 +168,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods }: AddExpenseF
                 onClick={() => setPaymentMethodId(prev => prev === pm.id ? "" : pm.id)}
                 whileTap={{ scale: 0.93 }}
                 className={cn(
-                  "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
+                  "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all overflow-hidden min-w-0",
                   isSelected
                     ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-md shadow-primary/10"
                     : "border-transparent bg-muted/40 hover:bg-muted/70"
@@ -186,7 +186,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods }: AddExpenseF
                   </motion.div>
                 )}
                 <CategoryIcon name={pm.icon} color={pm.color} size="sm" glow={isSelected} />
-                <span className={cn("font-medium", isSelected && "text-primary font-semibold")}>
+                <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
                   {pm.name}
                 </span>
               </motion.button>

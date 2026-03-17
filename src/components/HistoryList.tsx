@@ -148,7 +148,7 @@ function EditExpenseSheet({
                 type="button"
                 onClick={() => setCategoryId(cat.id)}
                 className={cn(
-                  "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all",
+                  "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all overflow-hidden min-w-0",
                   isSelected
                     ? "border-primary bg-primary/10 ring-1 ring-primary/20"
                     : "border-transparent bg-muted/40"
@@ -160,7 +160,7 @@ function EditExpenseSheet({
                   </div>
                 )}
                 <CategoryIcon name={cat.icon} color={cat.color} size="sm" />
-                <span className={cn("truncate font-medium", isSelected && "text-primary font-semibold")}>
+                <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
                   {cat.name}
                 </span>
               </button>
@@ -181,7 +181,7 @@ function EditExpenseSheet({
                 type="button"
                 onClick={() => setPaymentMethodId(pm.id)}
                 className={cn(
-                  "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all",
+                  "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all overflow-hidden min-w-0",
                   isSelected
                     ? "border-primary bg-primary/10 ring-1 ring-primary/20"
                     : "border-transparent bg-muted/40"
@@ -193,7 +193,7 @@ function EditExpenseSheet({
                   </div>
                 )}
                 <CategoryIcon name={pm.icon} color={pm.color} size="sm" />
-                <span className={cn("font-medium", isSelected && "text-primary font-semibold")}>
+                <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
                   {pm.name}
                 </span>
               </button>
