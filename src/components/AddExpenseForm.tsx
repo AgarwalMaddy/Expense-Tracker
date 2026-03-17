@@ -69,6 +69,8 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
     });
   };
 
+  const selectedCat = categories.find((c) => c.id === categoryId);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -96,28 +98,49 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
 
       {/* Category Grid */}
       <div className="space-y-2">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Category
+          {selectedCat && (
+            <span className="ml-2 normal-case tracking-normal text-foreground">
+              — {selectedCat.name}
+            </span>
+          )}
+        </Label>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
-          {categories.map((cat, i) => (
-            <motion.button
-              key={cat.id}
-              type="button"
-              onClick={() => setCategoryId(cat.id)}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: i * 0.03 }}
-              whileTap={{ scale: 0.93 }}
-              className={cn(
-                "flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
-                categoryId === cat.id
-                  ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/10"
-                  : "border-transparent bg-muted/40 hover:bg-muted/70"
-              )}
-            >
-              <CategoryIcon name={cat.icon} color={cat.color} size="sm" glow={categoryId === cat.id} />
-              <span className="truncate font-medium">{cat.name}</span>
-            </motion.button>
-          ))}
+          {categories.map((cat, i) => {
+            const isSelected = categoryId === cat.id;
+            return (
+              <motion.button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategoryId(cat.id)}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: i * 0.03 }}
+                whileTap={{ scale: 0.93 }}
+                className={cn(
+                  "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-md shadow-primary/10"
+                    : "border-transparent bg-muted/40 hover:bg-muted/70"
+                )}
+              >
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
+                  >
+                    <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
+                  </motion.div>
+                )}
+                <CategoryIcon name={cat.icon} color={cat.color} size="sm" glow={isSelected} />
+                <span className={cn("truncate font-medium", isSelected && "text-primary font-semibold")}>
+                  {cat.name}
+                </span>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
@@ -125,23 +148,39 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
       <div className="space-y-2">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</Label>
         <div className="grid grid-cols-4 gap-2">
-          {PAYMENT_METHODS.map((pm) => (
-            <motion.button
-              key={pm.value}
-              type="button"
-              onClick={() => setPaymentMethod(pm.value)}
-              whileTap={{ scale: 0.93 }}
-              className={cn(
-                "flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
-                paymentMethod === pm.value
-                  ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/10"
-                  : "border-transparent bg-muted/40 hover:bg-muted/70"
-              )}
-            >
-              <CategoryIcon name={pm.icon} size="sm" />
-              <span className="font-medium">{pm.label}</span>
-            </motion.button>
-          ))}
+          {PAYMENT_METHODS.map((pm) => {
+            const isSelected = paymentMethod === pm.value;
+            return (
+              <motion.button
+                key={pm.value}
+                type="button"
+                onClick={() => setPaymentMethod(pm.value)}
+                whileTap={{ scale: 0.93 }}
+                className={cn(
+                  "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-md shadow-primary/10"
+                    : "border-transparent bg-muted/40 hover:bg-muted/70"
+                )}
+              >
+                {isSelected && (
+                  <motion.div
+                    layoutId="payment-check"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  >
+                    <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
+                  </motion.div>
+                )}
+                <CategoryIcon name={pm.icon} size="sm" />
+                <span className={cn("font-medium", isSelected && "text-primary font-semibold")}>
+                  {pm.label}
+                </span>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
