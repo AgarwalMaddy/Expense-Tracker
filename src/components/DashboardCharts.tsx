@@ -14,10 +14,6 @@ import {
 } from "recharts";
 import { CURRENCY_SYMBOL } from "@/lib/constants";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import {
-  Banknote, Smartphone, SmartphoneNfc, CreditCard, Wallet, Landmark,
-  Globe, type LucideIcon,
-} from "lucide-react";
 import { motion } from "framer-motion";
 
 interface CategoryData {
@@ -32,7 +28,7 @@ interface DailyData {
 }
 
 interface PaymentData {
-  method: string;
+  paymentMethod: { name: string; icon: string; color: string };
   total: number;
 }
 
@@ -154,33 +150,6 @@ export function DailyBarChart({ data }: { data: DailyData[] }) {
   );
 }
 
-const PAYMENT_ICONS: Record<string, LucideIcon> = {
-  CASH: Banknote,
-  UPI_BANK: Smartphone,
-  UPI_CC: SmartphoneNfc,
-  CREDIT_CARD: CreditCard,
-  DEBIT_CARD: Wallet,
-  NET_BANKING: Landmark,
-};
-
-const PAYMENT_COLORS: Record<string, string> = {
-  CASH: "#22c55e",
-  UPI_BANK: "#8b5cf6",
-  UPI_CC: "#a855f7",
-  CREDIT_CARD: "#3b82f6",
-  DEBIT_CARD: "#06b6d4",
-  NET_BANKING: "#f97316",
-};
-
-const PAYMENT_LABELS: Record<string, string> = {
-  CASH: "Cash",
-  UPI_BANK: "UPI (Bank)",
-  UPI_CC: "UPI (CC)",
-  CREDIT_CARD: "Credit Card",
-  DEBIT_CARD: "Debit Card",
-  NET_BANKING: "Net Banking",
-};
-
 export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
   const total = data.reduce((sum, d) => sum + d.total, 0);
 
@@ -199,11 +168,10 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
         .sort((a, b) => b.total - a.total)
         .map((entry, i) => {
           const pct = ((entry.total / total) * 100).toFixed(0);
-          const Icon = PAYMENT_ICONS[entry.method] || Globe;
-          const color = PAYMENT_COLORS[entry.method] || "#6b7280";
+          const pm = entry.paymentMethod;
           return (
             <motion.div
-              key={entry.method}
+              key={pm.name}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
@@ -211,13 +179,8 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
             >
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2.5">
-                  <div
-                    className="flex h-8 w-8 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${color}15` }}
-                  >
-                    <Icon className="h-4 w-4" style={{ color }} />
-                  </div>
-                  <span className="font-medium">{PAYMENT_LABELS[entry.method] || entry.method}</span>
+                  <CategoryIcon name={pm.icon} color={pm.color} size="sm" />
+                  <span className="font-medium">{pm.name}</span>
                 </span>
                 <span className="font-semibold tabular-nums">
                   {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}
@@ -230,7 +193,7 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
                   animate={{ width: `${pct}%` }}
                   transition={{ duration: 0.8, delay: 0.2 + i * 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
                   className="h-full rounded-full"
-                  style={{ backgroundColor: color }}
+                  style={{ backgroundColor: pm.color }}
                 />
               </div>
             </motion.div>

@@ -6,7 +6,8 @@ import { Trash2, Search, Filter, X, Pencil, CalendarIcon, Check, Loader2 } from 
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { CURRENCY_SYMBOL, PAYMENT_METHODS, PAYMENT_LABEL_MAP } from "@/lib/constants";
+import { CURRENCY_SYMBOL } from "@/lib/constants";
+import { autoGridCols } from "@/lib/grid";
 import { deleteExpense, getExpenses, updateExpense } from "@/lib/actions";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Input } from "@/components/ui/input";
@@ -23,10 +24,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import type { Category, Expense, ExpenseTag, Tag } from "@/generated/prisma/client";
+import type {
+  Category,
+  Expense,
+  ExpenseTag,
+  Tag,
+  PaymentMethod,
+} from "@/generated/prisma/client";
 
 type ExpenseWithRelations = Expense & {
   category: Category;
+  paymentMethod: PaymentMethod;
   tags: (ExpenseTag & { tag: Tag })[];
 };
 
@@ -34,18 +42,21 @@ interface HistoryListProps {
   initialExpenses: ExpenseWithRelations[];
   total: number;
   categories: Category[];
+  paymentMethods: PaymentMethod[];
   tags: Tag[];
 }
 
 function EditExpenseSheet({
   expense,
   categories,
+  paymentMethods,
   tags,
   onSave,
   onClose,
 }: {
   expense: ExpenseWithRelations;
   categories: Category[];
+  paymentMethods: PaymentMethod[];
   tags: Tag[];
   onSave: (updated: ExpenseWithRelations) => void;
   onClose: () => void;
@@ -53,7 +64,7 @@ function EditExpenseSheet({
   const [isPending, startTransition] = useTransition();
   const [amount, setAmount] = useState(String(Number(expense.amount)));
   const [categoryId, setCategoryId] = useState(expense.categoryId);
-  const [paymentMethod, setPaymentMethod] = useState(expense.paymentMethod);
+  const [paymentMethodId, setPaymentMethodId] = useState(expense.paymentMethodId);
   const [description, setDescription] = useState(expense.description || "");
   const [notes, setNotes] = useState(expense.notes || "");
   const [date, setDate] = useState<Date>(new Date(expense.expenseDate));
@@ -62,7 +73,7 @@ function EditExpenseSheet({
   );
 
   const handleSave = () => {
-    if (!amount || !categoryId || !paymentMethod) {
+    if (!amount || !categoryId || !paymentMethodId) {
       toast.error("Amount, category, and payment are required");
       return;
     }
@@ -72,7 +83,7 @@ function EditExpenseSheet({
         await updateExpense(expense.id, {
           amount: parseFloat(amount),
           categoryId,
-          paymentMethod: paymentMethod as "CASH" | "UPI_BANK" | "UPI_CC" | "CREDIT_CARD" | "DEBIT_CARD" | "NET_BANKING",
+          paymentMethodId,
           description: description || undefined,
           notes: notes || undefined,
           expenseDate: date.toISOString(),
@@ -80,12 +91,14 @@ function EditExpenseSheet({
         });
 
         const cat = categories.find((c) => c.id === categoryId)!;
+        const pm = paymentMethods.find((p) => p.id === paymentMethodId)!;
         onSave({
           ...expense,
           amount: parseFloat(amount) as unknown as Expense["amount"],
           categoryId,
           category: cat,
-          paymentMethod: paymentMethod as Expense["paymentMethod"],
+          paymentMethodId,
+          paymentMethod: pm,
           description: description || null,
           notes: notes || null,
           expenseDate: date,
@@ -126,7 +139,7 @@ function EditExpenseSheet({
       {/* Category */}
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className={cn("grid gap-1.5", autoGridCols(categories.length))}>
           {categories.map((cat) => {
             const isSelected = categoryId === cat.id;
             return (
@@ -159,14 +172,14 @@ function EditExpenseSheet({
       {/* Payment */}
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</Label>
-        <div className="grid grid-cols-3 gap-1.5">
-          {PAYMENT_METHODS.map((pm) => {
-            const isSelected = paymentMethod === pm.value;
+        <div className={cn("grid gap-1.5", autoGridCols(paymentMethods.length))}>
+          {paymentMethods.map((pm) => {
+            const isSelected = paymentMethodId === pm.id;
             return (
               <button
-                key={pm.value}
+                key={pm.id}
                 type="button"
-                onClick={() => setPaymentMethod(pm.value)}
+                onClick={() => setPaymentMethodId(pm.id)}
                 className={cn(
                   "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all",
                   isSelected
@@ -179,9 +192,9 @@ function EditExpenseSheet({
                     <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
                   </div>
                 )}
-                <CategoryIcon name={pm.icon} size="sm" />
+                <CategoryIcon name={pm.icon} color={pm.color} size="sm" />
                 <span className={cn("font-medium", isSelected && "text-primary font-semibold")}>
-                  {pm.label}
+                  {pm.name}
                 </span>
               </button>
             );
@@ -256,7 +269,7 @@ function EditExpenseSheet({
       {/* Save */}
       <Button
         onClick={handleSave}
-        disabled={isPending || !amount || !categoryId || !paymentMethod}
+        disabled={isPending || !amount || !categoryId || !paymentMethodId}
         className="h-12 w-full rounded-xl gradient-primary hover:opacity-90 transition-opacity font-semibold"
       >
         {isPending ? (
@@ -271,7 +284,13 @@ function EditExpenseSheet({
   );
 }
 
-export function HistoryList({ initialExpenses, total, categories, tags }: HistoryListProps) {
+export function HistoryList({
+  initialExpenses,
+  total,
+  categories,
+  paymentMethods,
+  tags,
+}: HistoryListProps) {
   const [expenses, setExpenses] = useState<ExpenseWithRelations[]>(initialExpenses);
   const [count, setCount] = useState(total);
   const [search, setSearch] = useState("");
@@ -285,7 +304,7 @@ export function HistoryList({ initialExpenses, total, categories, tags }: Histor
       const result = await getExpenses({
         search: search || undefined,
         categoryId: categoryFilter || undefined,
-        paymentMethod: paymentFilter as "CASH" | "UPI_BANK" | "UPI_CC" | "CREDIT_CARD" | "DEBIT_CARD" | "NET_BANKING" | undefined,
+        paymentMethodId: paymentFilter || undefined,
         limit: 50,
       });
       setExpenses(result.expenses as ExpenseWithRelations[]);
@@ -372,9 +391,9 @@ export function HistoryList({ initialExpenses, total, categories, tags }: Histor
                   <SelectValue placeholder="All Payment Methods" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHODS.map((pm) => (
-                    <SelectItem key={pm.value} value={pm.value}>
-                      {pm.label}
+                  {paymentMethods.map((pm) => (
+                    <SelectItem key={pm.id} value={pm.id}>
+                      {pm.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -438,7 +457,7 @@ export function HistoryList({ initialExpenses, total, categories, tags }: Histor
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                     <span>{format(new Date(expense.expenseDate), "d MMM yyyy")}</span>
                     <span className="text-border">·</span>
-                    <span>{PAYMENT_LABEL_MAP[expense.paymentMethod] || expense.paymentMethod}</span>
+                    <span>{expense.paymentMethod.name}</span>
                   </div>
                   {expense.tags.length > 0 && (
                     <div className="mt-1.5 flex gap-1">
@@ -490,6 +509,7 @@ export function HistoryList({ initialExpenses, total, categories, tags }: Histor
               key={editingExpense.id}
               expense={editingExpense}
               categories={categories}
+              paymentMethods={paymentMethods}
               tags={tags}
               onSave={handleUpdate}
               onClose={() => setEditingExpense(null)}

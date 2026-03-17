@@ -2,8 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth/server";
-import { DEFAULT_CATEGORIES } from "@/lib/constants";
-import { PaymentMethod } from "@/generated/prisma/client";
+import { DEFAULT_CATEGORIES, DEFAULT_PAYMENT_METHODS } from "@/lib/constants";
 import { revalidatePath } from "next/cache";
 
 async function getUserId(): Promise<string> {
@@ -55,6 +54,22 @@ export async function ensureDefaultCategories() {
   }
 }
 
+export async function ensureDefaultPaymentMethods() {
+  const userId = await getUserId();
+  const existing = await prisma.paymentMethod.findMany({ where: { userId } });
+  if (existing.length === 0) {
+    await prisma.paymentMethod.createMany({
+      data: DEFAULT_PAYMENT_METHODS.map((pm) => ({
+        userId,
+        name: pm.name,
+        icon: pm.icon,
+        color: pm.color,
+        isDefault: true,
+      })),
+    });
+  }
+}
+
 export async function getCategories() {
   const userId = await getUserId();
   await ensureDefaultCategories();
@@ -62,6 +77,34 @@ export async function getCategories() {
     where: { userId },
     orderBy: { name: "asc" },
   });
+}
+
+export async function getPaymentMethods() {
+  const userId = await getUserId();
+  await ensureDefaultPaymentMethods();
+  return prisma.paymentMethod.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function createPaymentMethod(data: {
+  name: string;
+  icon: string;
+  color: string;
+}) {
+  const userId = await getUserId();
+  const pm = await prisma.paymentMethod.create({
+    data: {
+      userId,
+      name: data.name.trim(),
+      icon: data.icon,
+      color: data.color,
+    },
+  });
+  revalidatePath("/add");
+  revalidatePath("/settings");
+  return pm;
 }
 
 export async function getTags() {
@@ -84,7 +127,7 @@ export async function createTag(name: string) {
 export async function createExpense(data: {
   amount: number;
   categoryId: string;
-  paymentMethod: PaymentMethod;
+  paymentMethodId: string;
   description?: string;
   notes?: string;
   expenseDate: string;
@@ -97,7 +140,7 @@ export async function createExpense(data: {
       userId,
       amount: data.amount,
       categoryId: data.categoryId,
-      paymentMethod: data.paymentMethod,
+      paymentMethodId: data.paymentMethodId,
       description: data.description || null,
       notes: data.notes || null,
       expenseDate: new Date(data.expenseDate),
@@ -116,7 +159,7 @@ export async function getExpenses(params?: {
   startDate?: string;
   endDate?: string;
   categoryId?: string;
-  paymentMethod?: PaymentMethod;
+  paymentMethodId?: string;
   search?: string;
   limit?: number;
   offset?: number;
@@ -132,7 +175,7 @@ export async function getExpenses(params?: {
     };
   }
   if (params?.categoryId) where.categoryId = params.categoryId;
-  if (params?.paymentMethod) where.paymentMethod = params.paymentMethod;
+  if (params?.paymentMethodId) where.paymentMethodId = params.paymentMethodId;
   if (params?.search) {
     where.OR = [
       { description: { contains: params.search, mode: "insensitive" } },
@@ -143,7 +186,11 @@ export async function getExpenses(params?: {
   const [expenses, total] = await Promise.all([
     prisma.expense.findMany({
       where,
-      include: { category: true, tags: { include: { tag: true } } },
+      include: {
+        category: true,
+        paymentMethod: true,
+        tags: { include: { tag: true } },
+      },
       orderBy: { expenseDate: "desc" },
       take: params?.limit || 50,
       skip: params?.offset || 0,
@@ -159,7 +206,7 @@ export async function updateExpense(
   data: {
     amount: number;
     categoryId: string;
-    paymentMethod: PaymentMethod;
+    paymentMethodId: string;
     description?: string;
     notes?: string;
     expenseDate: string;
@@ -175,7 +222,7 @@ export async function updateExpense(
     data: {
       amount: data.amount,
       categoryId: data.categoryId,
-      paymentMethod: data.paymentMethod,
+      paymentMethodId: data.paymentMethodId,
       description: data.description || null,
       notes: data.notes || null,
       expenseDate: new Date(data.expenseDate),
@@ -218,7 +265,7 @@ export async function getDashboardData() {
         _count: true,
       }),
       prisma.expense.groupBy({
-        by: ["paymentMethod"],
+        by: ["paymentMethodId"],
         where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
         _sum: { amount: true },
       }),
@@ -233,7 +280,7 @@ export async function getDashboardData() {
       ` as Promise<Array<{ date: Date; total: number }>>,
       prisma.expense.findMany({
         where: { userId },
-        include: { category: true },
+        include: { category: true, paymentMethod: true },
         orderBy: { expenseDate: "desc" },
         take: 5,
       }),
@@ -242,8 +289,12 @@ export async function getDashboardData() {
   const categories = await prisma.category.findMany({
     where: { userId, id: { in: categoryBreakdown.map((c) => c.categoryId) } },
   });
+  const paymentMethods = await prisma.paymentMethod.findMany({
+    where: { userId, id: { in: paymentBreakdown.map((p) => p.paymentMethodId) } },
+  });
 
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
+  const pmMap = new Map(paymentMethods.map((p) => [p.id, p]));
 
   return {
     totalSpent: Number(monthlyExpenses._sum.amount || 0),
@@ -254,7 +305,7 @@ export async function getDashboardData() {
       count: c._count,
     })),
     paymentBreakdown: paymentBreakdown.map((p) => ({
-      method: p.paymentMethod,
+      paymentMethod: pmMap.get(p.paymentMethodId)!,
       total: Number(p._sum.amount || 0),
     })),
     dailyTrend: dailyTrend.map((d) => ({

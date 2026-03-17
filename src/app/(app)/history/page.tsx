@@ -1,13 +1,14 @@
-import { getExpenses, getCategories, getTags } from "@/lib/actions";
+import { getExpenses, getCategories, getTags, getPaymentMethods } from "@/lib/actions";
 import { HistoryList } from "@/components/HistoryList";
 
 export const dynamic = "force-dynamic";
 
 export default async function HistoryPage() {
-  const [{ expenses, total }, categories, tags] = await Promise.all([
+  const [{ expenses, total }, categories, tags, paymentMethods] = await Promise.all([
     getExpenses({ limit: 50 }),
     getCategories(),
     getTags(),
+    getPaymentMethods(),
   ]);
 
   return (
@@ -16,6 +17,7 @@ export default async function HistoryPage() {
         initialExpenses={expenses}
         total={total}
         categories={categories}
+        paymentMethods={paymentMethods}
         tags={tags}
       />
     </div>

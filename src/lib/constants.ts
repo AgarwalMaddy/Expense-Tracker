@@ -12,17 +12,34 @@ export const DEFAULT_CATEGORIES = [
   { name: "Misc", icon: "package", color: "#6b7280" },
 ] as const;
 
-export const PAYMENT_METHODS = [
-  { value: "CASH", label: "Cash", icon: "banknote" },
-  { value: "UPI_BANK", label: "UPI (Bank)", icon: "smartphone" },
-  { value: "UPI_CC", label: "UPI (CC)", icon: "smartphone-nfc" },
-  { value: "CREDIT_CARD", label: "Credit Card", icon: "credit-card" },
-  { value: "DEBIT_CARD", label: "Debit Card", icon: "wallet" },
-  { value: "NET_BANKING", label: "Net Banking", icon: "landmark" },
+export const DEFAULT_PAYMENT_METHODS = [
+  { name: "Cash", icon: "banknote", color: "#22c55e" },
+  { name: "UPI (Bank)", icon: "smartphone", color: "#8b5cf6" },
+  { name: "UPI (CC)", icon: "smartphone-nfc", color: "#a855f7" },
+  { name: "Credit Card", icon: "credit-card", color: "#3b82f6" },
+  { name: "Debit Card", icon: "wallet", color: "#06b6d4" },
+  { name: "Net Banking", icon: "landmark", color: "#f97316" },
 ] as const;
 
-export const PAYMENT_LABEL_MAP: Record<string, string> = Object.fromEntries(
-  PAYMENT_METHODS.map((pm) => [pm.value, pm.label])
-);
+export const AVAILABLE_ICONS = [
+  { name: "banknote", label: "Cash" },
+  { name: "smartphone", label: "Phone" },
+  { name: "smartphone-nfc", label: "NFC" },
+  { name: "credit-card", label: "Card" },
+  { name: "wallet", label: "Wallet" },
+  { name: "landmark", label: "Bank" },
+  { name: "globe", label: "Online" },
+  { name: "building-2", label: "Office" },
+  { name: "hand-coins", label: "Coins" },
+  { name: "piggy-bank", label: "Savings" },
+  { name: "receipt", label: "Receipt" },
+  { name: "qr-code", label: "QR Code" },
+] as const;
+
+export const AVAILABLE_COLORS = [
+  "#22c55e", "#8b5cf6", "#a855f7", "#3b82f6", "#06b6d4",
+  "#f97316", "#ef4444", "#ec4899", "#eab308", "#14b8a6",
+  "#6366f1", "#f43f5e", "#6b7280", "#84cc16",
+] as const;
 
 export const CURRENCY_SYMBOL = "₹";

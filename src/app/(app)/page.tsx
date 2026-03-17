@@ -2,7 +2,7 @@ import { getDashboardData } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryPieChart, DailyBarChart, PaymentBreakdown } from "@/components/DashboardCharts";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { CURRENCY_SYMBOL, PAYMENT_LABEL_MAP } from "@/lib/constants";
+import { CURRENCY_SYMBOL } from "@/lib/constants";
 import { format } from "date-fns";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, Receipt, Wallet } from "lucide-react";
@@ -148,7 +148,7 @@ export default async function DashboardPage() {
                           {expense.description || expense.category.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(expense.expenseDate), "d MMM")} · {PAYMENT_LABEL_MAP[expense.paymentMethod] || expense.paymentMethod}
+                          {format(new Date(expense.expenseDate), "d MMM")} · {expense.paymentMethod.name}
                         </p>
                       </div>
                       <p className="text-sm font-semibold tabular-nums">

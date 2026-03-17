@@ -4,7 +4,8 @@ import {
   UtensilsCrossed, Car, ShoppingCart, ShoppingBag, HeartPulse,
   FileText, Clapperboard, House, GraduationCap, Sparkles, Package,
   Banknote, Smartphone, SmartphoneNfc, CreditCard, Wallet, Landmark,
-  Globe, type LucideIcon,
+  Globe, Building2, HandCoins, PiggyBank, Receipt, QrCode,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   wallet: Wallet,
   landmark: Landmark,
   globe: Globe,
+  "building-2": Building2,
+  "hand-coins": HandCoins,
+  "piggy-bank": PiggyBank,
+  receipt: Receipt,
+  "qr-code": QrCode,
 };
 
 interface CategoryIconProps {

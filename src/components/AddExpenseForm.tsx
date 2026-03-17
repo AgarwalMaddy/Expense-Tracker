@@ -7,7 +7,8 @@ import { CalendarIcon, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { PAYMENT_METHODS, CURRENCY_SYMBOL } from "@/lib/constants";
+import { CURRENCY_SYMBOL } from "@/lib/constants";
+import { autoGridCols } from "@/lib/grid";
 import { createExpense } from "@/lib/actions";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Button } from "@/components/ui/button";
@@ -15,28 +16,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { Category, Tag } from "@/generated/prisma/client";
+import type { Category, Tag, PaymentMethod } from "@/generated/prisma/client";
 
 interface AddExpenseFormProps {
   categories: Category[];
   tags: Tag[];
+  paymentMethods: PaymentMethod[];
 }
 
-export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
+export function AddExpenseForm({ categories, tags, paymentMethods }: AddExpenseFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethodId, setPaymentMethodId] = useState("");
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState<Date>(new Date());
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const handleSubmit = () => {
-    if (!amount || !categoryId || !paymentMethod) {
+    if (!amount || !categoryId || !paymentMethodId) {
       toast.error("Amount, category, and payment method are required");
       return;
     }
@@ -46,7 +48,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
         await createExpense({
           amount: parseFloat(amount),
           categoryId,
-          paymentMethod: paymentMethod as "CASH" | "UPI_BANK" | "UPI_CC" | "CREDIT_CARD" | "DEBIT_CARD" | "NET_BANKING",
+          paymentMethodId,
           description: description || undefined,
           notes: notes || undefined,
           expenseDate: date.toISOString(),
@@ -59,7 +61,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
         toast.success("Expense added!");
         setAmount("");
         setCategoryId("");
-        setPaymentMethod("");
+        setPaymentMethodId("");
         setDescription("");
         setNotes("");
         setSelectedTags([]);
@@ -71,6 +73,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
   };
 
   const selectedCat = categories.find((c) => c.id === categoryId);
+  const selectedPm = paymentMethods.find((p) => p.id === paymentMethodId);
 
   return (
     <motion.div
@@ -107,7 +110,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
             </span>
           )}
         </Label>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+        <div className={cn("grid gap-2", autoGridCols(categories.length))}>
           {categories.map((cat, i) => {
             const isSelected = categoryId === cat.id;
             return (
@@ -145,24 +148,24 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
         </div>
       </div>
 
-      {/* Payment Method */}
+      {/* Payment Method Grid */}
       <div className="space-y-2">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Payment
-          {paymentMethod && (
+          {selectedPm && (
             <span className="ml-1.5 normal-case tracking-normal text-foreground">
-              &mdash; {PAYMENT_METHODS.find((p) => p.value === paymentMethod)?.label}
+              &mdash; {selectedPm.name}
             </span>
           )}
         </Label>
-        <div className="grid grid-cols-3 gap-2">
-          {PAYMENT_METHODS.map((pm) => {
-            const isSelected = paymentMethod === pm.value;
+        <div className={cn("grid gap-2", autoGridCols(paymentMethods.length))}>
+          {paymentMethods.map((pm) => {
+            const isSelected = paymentMethodId === pm.id;
             return (
               <motion.button
-                key={pm.value}
+                key={pm.id}
                 type="button"
-                onClick={() => setPaymentMethod(prev => prev === pm.value ? "" : pm.value)}
+                onClick={() => setPaymentMethodId(prev => prev === pm.id ? "" : pm.id)}
                 whileTap={{ scale: 0.93 }}
                 className={cn(
                   "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
@@ -182,9 +185,9 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
                     <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
                   </motion.div>
                 )}
-                <CategoryIcon name={pm.icon} size="sm" />
+                <CategoryIcon name={pm.icon} color={pm.color} size="sm" glow={isSelected} />
                 <span className={cn("font-medium", isSelected && "text-primary font-semibold")}>
-                  {pm.label}
+                  {pm.name}
                 </span>
               </motion.button>
             );
@@ -270,7 +273,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
       <motion.div whileTap={{ scale: 0.98 }}>
         <Button
           onClick={handleSubmit}
-          disabled={isPending || !amount || !categoryId}
+          disabled={isPending || !amount || !categoryId || !paymentMethodId}
           className="relative h-14 w-full rounded-2xl text-base font-semibold gradient-primary hover:opacity-90 transition-opacity md:w-auto md:px-16"
           size="lg"
         >

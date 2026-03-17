@@ -2,9 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, User, Shield, ChevronRight, Tag } from "lucide-react";
+import { Plus, User, Shield, ChevronRight, Tag, CreditCard, Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { createTag } from "@/lib/actions";
+import { cn } from "@/lib/utils";
+import { AVAILABLE_ICONS, AVAILABLE_COLORS } from "@/lib/constants";
+import { createTag, createPaymentMethod } from "@/lib/actions";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +16,10 @@ import Link from "next/link";
 export default function SettingsPage() {
   const [tagName, setTagName] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const [pmName, setPmName] = useState("");
+  const [pmIcon, setPmIcon] = useState("banknote");
+  const [pmColor, setPmColor] = useState("#6366f1");
 
   const handleAddTag = () => {
     if (!tagName.trim()) return;
@@ -23,6 +30,21 @@ export default function SettingsPage() {
         setTagName("");
       } catch {
         toast.error("Failed to create tag");
+      }
+    });
+  };
+
+  const handleAddPaymentMethod = () => {
+    if (!pmName.trim()) return;
+    startTransition(async () => {
+      try {
+        await createPaymentMethod({ name: pmName, icon: pmIcon, color: pmColor });
+        toast.success(`Payment method "${pmName}" created`);
+        setPmName("");
+        setPmIcon("banknote");
+        setPmColor("#6366f1");
+      } catch {
+        toast.error("Failed to create payment method");
       }
     });
   };
@@ -66,6 +88,97 @@ export default function SettingsPage() {
                 className="rounded-xl gradient-primary hover:opacity-90 transition-opacity"
               >
                 <Plus className="h-4 w-4" />
+              </Button>
+            </motion.div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Add Payment Method */}
+      <Card className="overflow-hidden border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base font-display font-semibold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <CreditCard className="h-4 w-4 text-primary" />
+            </div>
+            Add Payment Method
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            placeholder="e.g. PayPal, Google Pay, Amazon Pay"
+            value={pmName}
+            onChange={(e) => setPmName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAddPaymentMethod()}
+            className="rounded-xl"
+          />
+
+          {/* Icon picker */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Icon</p>
+            <div className="flex flex-wrap gap-1.5">
+              {AVAILABLE_ICONS.map((ic) => {
+                const isSelected = pmIcon === ic.name;
+                return (
+                  <button
+                    key={ic.name}
+                    type="button"
+                    onClick={() => setPmIcon(ic.name)}
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-all",
+                      isSelected
+                        ? "border-primary bg-primary/10"
+                        : "border-transparent bg-muted/40 hover:bg-muted/70"
+                    )}
+                    title={ic.label}
+                  >
+                    <CategoryIcon name={ic.name} size="sm" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Color picker */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Color</p>
+            <div className="flex flex-wrap gap-1.5">
+              {AVAILABLE_COLORS.map((c) => {
+                const isSelected = pmColor === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setPmColor(c)}
+                    className={cn(
+                      "relative flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
+                      isSelected ? "border-foreground scale-110" : "border-transparent"
+                    )}
+                    style={{ backgroundColor: c }}
+                  >
+                    {isSelected && (
+                      <Check className="h-3.5 w-3.5 text-white drop-shadow-sm" strokeWidth={3} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Preview + Add */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/30 px-3 py-2 flex-1">
+              <CategoryIcon name={pmIcon} color={pmColor} size="sm" />
+              <span className="text-sm font-medium">{pmName || "Preview"}</span>
+            </div>
+            <motion.div whileTap={{ scale: 0.9 }}>
+              <Button
+                onClick={handleAddPaymentMethod}
+                disabled={isPending || !pmName.trim()}
+                className="rounded-xl gradient-primary hover:opacity-90 transition-opacity"
+              >
+                <Plus className="mr-1.5 h-4 w-4" />
+                Add
               </Button>
             </motion.div>
           </div>

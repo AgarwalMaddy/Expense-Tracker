@@ -21,6 +21,20 @@ model Category {
   @@map("categories")
 }
 
+model PaymentMethod {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  icon      String
+  color     String    @default("#6366f1")
+  isDefault Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  expenses  Expense[]
+
+  @@unique([userId, name])
+  @@map("payment_methods")
+}
+
 model Tag {
   id        String       @id @default(cuid())
   userId    String
@@ -33,22 +47,24 @@ model Tag {
 }
 
 model Expense {
-  id            String        @id @default(cuid())
-  userId        String
-  amount        Decimal       @db.Decimal(12, 2)
-  currency      String        @default("INR")
-  categoryId    String
-  category      Category      @relation(fields: [categoryId], references: [id])
-  paymentMethod PaymentMethod
-  description   String?
-  notes         String?
-  expenseDate   DateTime      @default(now())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  tags          ExpenseTag[]
+  id              String        @id @default(cuid())
+  userId          String
+  amount          Decimal       @db.Decimal(12, 2)
+  currency        String        @default("INR")
+  categoryId      String
+  category        Category      @relation(fields: [categoryId], references: [id])
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  description     String?
+  notes           String?
+  expenseDate     DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tags            ExpenseTag[]
 
   @@index([userId, expenseDate])
   @@index([userId, categoryId])
+  @@index([userId, paymentMethodId])
   @@map("expenses")
 }
 
@@ -60,13 +76,4 @@ model ExpenseTag {
 
   @@id([expenseId, tagId])
   @@map("expense_tags")
-}
-
-enum PaymentMethod {
-  CASH
-  UPI_BANK
-  UPI_CC
-  CREDIT_CARD
-  DEBIT_CARD
-  NET_BANKING
 }
