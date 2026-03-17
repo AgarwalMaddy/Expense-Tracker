@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Inter } from "next/font/google";
-import { NeonAuthUIProvider, UserButton } from "@neondatabase/auth/react";
+import { NeonAuthUIProvider } from "@neondatabase/auth/react";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { authClient } from "@/lib/auth/client";
-import { Wallet } from "lucide-react";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -52,18 +51,7 @@ export default function RootLayout({
           redirectTo="/"
           social={{ providers: ["google"] }}
         >
-          <header className="sticky top-0 z-50 glass-strong h-14 flex items-center justify-between px-6">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-                <Wallet className="h-4 w-4 text-white" />
-              </div>
-              <h1 className="font-display text-base font-semibold tracking-tight">
-                Expense Tracker
-              </h1>
-            </div>
-            <UserButton size="icon" />
-          </header>
-          <main className="pb-20 md:pb-6">{children}</main>
+          {children}
           <Toaster position="top-center" richColors />
           <ServiceWorkerRegistration />
           <Analytics />
