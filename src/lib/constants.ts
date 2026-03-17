@@ -14,8 +14,7 @@ export const DEFAULT_CATEGORIES = [
 
 export const DEFAULT_PAYMENT_METHODS = [
   { name: "Cash", icon: "banknote", color: "#22c55e" },
-  { name: "UPI (Bank)", icon: "smartphone", color: "#8b5cf6" },
-  { name: "UPI (CC)", icon: "smartphone-nfc", color: "#a855f7" },
+  { name: "UPI", icon: "smartphone", color: "#8b5cf6" },
   { name: "Credit Card", icon: "credit-card", color: "#3b82f6" },
   { name: "Debit Card", icon: "wallet", color: "#06b6d4" },
   { name: "Net Banking", icon: "landmark", color: "#f97316" },

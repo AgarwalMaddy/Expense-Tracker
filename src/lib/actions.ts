@@ -107,6 +107,22 @@ export async function createPaymentMethod(data: {
   return pm;
 }
 
+export async function deletePaymentMethod(id: string) {
+  const userId = await getUserId();
+
+  const usageCount = await prisma.expense.count({
+    where: { userId, paymentMethodId: id },
+  });
+  if (usageCount > 0) {
+    throw new Error(`Cannot delete — ${usageCount} expense(s) use this payment method`);
+  }
+
+  await prisma.paymentMethod.delete({ where: { id, userId } });
+  revalidatePath("/add");
+  revalidatePath("/settings");
+  revalidatePath("/history");
+}
+
 export async function getTags() {
   const userId = await getUserId();
   return prisma.tag.findMany({
