@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NeonAuthUIProvider, UserButton } from "@neondatabase/auth/react";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { authClient } from "@/lib/auth/client";
 import "./globals.css";
 
@@ -57,6 +59,8 @@ export default function RootLayout({
           <main className="pb-20">{children}</main>
           <Toaster position="top-center" />
           <ServiceWorkerRegistration />
+          <Analytics />
+          <SpeedInsights />
         </NeonAuthUIProvider>
       </body>
     </html>
