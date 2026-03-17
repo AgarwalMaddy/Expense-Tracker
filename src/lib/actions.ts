@@ -1,0 +1,204 @@
+"use server";
+
+import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth/server";
+import { DEFAULT_CATEGORIES } from "@/lib/constants";
+import { PaymentMethod } from "@/generated/prisma/client";
+import { revalidatePath } from "next/cache";
+
+async function getUserId(): Promise<string> {
+  const { data: session } = await auth.getSession();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  return session.user.id;
+}
+
+export async function ensureDefaultCategories() {
+  const userId = await getUserId();
+
+  const existing = await prisma.category.count({ where: { userId } });
+  if (existing > 0) return;
+
+  await prisma.category.createMany({
+    data: DEFAULT_CATEGORIES.map((c) => ({
+      userId,
+      name: c.name,
+      icon: c.icon,
+      color: c.color,
+      isDefault: true,
+    })),
+  });
+}
+
+export async function getCategories() {
+  const userId = await getUserId();
+  await ensureDefaultCategories();
+  return prisma.category.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function getTags() {
+  const userId = await getUserId();
+  return prisma.tag.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function createTag(name: string) {
+  const userId = await getUserId();
+  const tag = await prisma.tag.create({
+    data: { userId, name: name.trim() },
+  });
+  revalidatePath("/add");
+  return tag;
+}
+
+export async function createExpense(data: {
+  amount: number;
+  categoryId: string;
+  paymentMethod: PaymentMethod;
+  description?: string;
+  notes?: string;
+  expenseDate: string;
+  tagIds?: string[];
+}) {
+  const userId = await getUserId();
+
+  const expense = await prisma.expense.create({
+    data: {
+      userId,
+      amount: data.amount,
+      categoryId: data.categoryId,
+      paymentMethod: data.paymentMethod,
+      description: data.description || null,
+      notes: data.notes || null,
+      expenseDate: new Date(data.expenseDate),
+      tags: data.tagIds?.length
+        ? { create: data.tagIds.map((tagId) => ({ tagId })) }
+        : undefined,
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/history");
+  return expense;
+}
+
+export async function getExpenses(params?: {
+  startDate?: string;
+  endDate?: string;
+  categoryId?: string;
+  paymentMethod?: PaymentMethod;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const userId = await getUserId();
+
+  const where: Record<string, unknown> = { userId };
+
+  if (params?.startDate || params?.endDate) {
+    where.expenseDate = {
+      ...(params.startDate ? { gte: new Date(params.startDate) } : {}),
+      ...(params.endDate ? { lte: new Date(params.endDate) } : {}),
+    };
+  }
+  if (params?.categoryId) where.categoryId = params.categoryId;
+  if (params?.paymentMethod) where.paymentMethod = params.paymentMethod;
+  if (params?.search) {
+    where.OR = [
+      { description: { contains: params.search, mode: "insensitive" } },
+      { notes: { contains: params.search, mode: "insensitive" } },
+    ];
+  }
+
+  const [expenses, total] = await Promise.all([
+    prisma.expense.findMany({
+      where,
+      include: { category: true, tags: { include: { tag: true } } },
+      orderBy: { expenseDate: "desc" },
+      take: params?.limit || 50,
+      skip: params?.offset || 0,
+    }),
+    prisma.expense.count({ where }),
+  ]);
+
+  return { expenses, total };
+}
+
+export async function deleteExpense(id: string) {
+  const userId = await getUserId();
+  await prisma.expense.delete({ where: { id, userId } });
+  revalidatePath("/");
+  revalidatePath("/history");
+}
+
+export async function getDashboardData() {
+  const userId = await getUserId();
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  const [monthlyExpenses, categoryBreakdown, paymentBreakdown, dailyTrend, recentExpenses] =
+    await Promise.all([
+      prisma.expense.aggregate({
+        where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      prisma.expense.groupBy({
+        by: ["categoryId"],
+        where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      prisma.expense.groupBy({
+        by: ["paymentMethod"],
+        where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
+        _sum: { amount: true },
+      }),
+      prisma.$queryRaw`
+        SELECT DATE(expense_date) as date, SUM(amount) as total
+        FROM expenses
+        WHERE user_id = ${userId}
+          AND expense_date >= ${startOfMonth}
+          AND expense_date <= ${endOfMonth}
+        GROUP BY DATE(expense_date)
+        ORDER BY date ASC
+      ` as Promise<Array<{ date: Date; total: number }>>,
+      prisma.expense.findMany({
+        where: { userId },
+        include: { category: true },
+        orderBy: { expenseDate: "desc" },
+        take: 5,
+      }),
+    ]);
+
+  const categories = await prisma.category.findMany({
+    where: { userId, id: { in: categoryBreakdown.map((c) => c.categoryId) } },
+  });
+
+  const categoryMap = new Map(categories.map((c) => [c.id, c]));
+
+  return {
+    totalSpent: Number(monthlyExpenses._sum.amount || 0),
+    transactionCount: monthlyExpenses._count,
+    categoryBreakdown: categoryBreakdown.map((c) => ({
+      category: categoryMap.get(c.categoryId)!,
+      total: Number(c._sum.amount || 0),
+      count: c._count,
+    })),
+    paymentBreakdown: paymentBreakdown.map((p) => ({
+      method: p.paymentMethod,
+      total: Number(p._sum.amount || 0),
+    })),
+    dailyTrend: dailyTrend.map((d) => ({
+      date: d.date.toISOString().split("T")[0],
+      total: Number(d.total),
+    })),
+    recentExpenses,
+  };
+}
