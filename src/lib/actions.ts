@@ -263,9 +263,11 @@ export async function deleteExpense(id: string) {
 export async function getDashboardData() {
   const userId = await getUserId();
 
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const istNow = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  const istYear = istNow.getUTCFullYear();
+  const istMonth = istNow.getUTCMonth();
+  const startOfMonth = new Date(Date.UTC(istYear, istMonth, 1) - 5.5 * 60 * 60 * 1000);
+  const endOfMonth = new Date(Date.UTC(istYear, istMonth + 1, 1) - 5.5 * 60 * 60 * 1000 - 1);
 
   const [monthlyExpenses, categoryBreakdown, paymentBreakdown, dailyTrend, recentExpenses] =
     await Promise.all([
@@ -286,14 +288,15 @@ export async function getDashboardData() {
         _sum: { amount: true },
       }),
       prisma.$queryRaw`
-        SELECT DATE("expenseDate" AT TIME ZONE 'Asia/Kolkata') as date, SUM(amount) as total
+        SELECT TO_CHAR(("expenseDate" AT TIME ZONE 'Asia/Kolkata')::date, 'YYYY-MM-DD') as date,
+               SUM(amount) as total
         FROM expenses
         WHERE "userId" = ${userId}
           AND "expenseDate" >= ${startOfMonth}
           AND "expenseDate" <= ${endOfMonth}
-        GROUP BY DATE("expenseDate" AT TIME ZONE 'Asia/Kolkata')
-        ORDER BY date ASC
-      ` as Promise<Array<{ date: Date; total: number }>>,
+        GROUP BY ("expenseDate" AT TIME ZONE 'Asia/Kolkata')::date
+        ORDER BY ("expenseDate" AT TIME ZONE 'Asia/Kolkata')::date ASC
+      ` as Promise<Array<{ date: string; total: number }>>,
       prisma.expense.findMany({
         where: { userId },
         include: { category: true, paymentMethod: true },
@@ -324,13 +327,10 @@ export async function getDashboardData() {
       paymentMethod: pmMap.get(p.paymentMethodId)!,
       total: Number(p._sum.amount || 0),
     })),
-    dailyTrend: dailyTrend.map((d) => {
-      const dt = new Date(d.date);
-      const yyyy = dt.getFullYear();
-      const mm = String(dt.getMonth() + 1).padStart(2, "0");
-      const dd = String(dt.getDate()).padStart(2, "0");
-      return { date: `${yyyy}-${mm}-${dd}`, total: Number(d.total) };
-    }),
+    dailyTrend: dailyTrend.map((d) => ({
+      date: String(d.date),
+      total: Number(d.total),
+    })),
     recentExpenses,
   };
 }
