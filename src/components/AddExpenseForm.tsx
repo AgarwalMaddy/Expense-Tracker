@@ -113,7 +113,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
               <motion.button
                 key={cat.id}
                 type="button"
-                onClick={() => setCategoryId(cat.id)}
+                onClick={() => setCategoryId(prev => prev === cat.id ? "" : cat.id)}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: i * 0.03 }}
@@ -161,7 +161,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
               <motion.button
                 key={pm.value}
                 type="button"
-                onClick={() => setPaymentMethod(pm.value)}
+                onClick={() => setPaymentMethod(prev => prev === pm.value ? "" : pm.value)}
                 whileTap={{ scale: 0.93 }}
                 className={cn(
                   "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
