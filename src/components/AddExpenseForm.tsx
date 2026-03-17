@@ -101,8 +101,8 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Category
           {selectedCat && (
-            <span className="ml-2 normal-case tracking-normal text-foreground">
-              — {selectedCat.name}
+            <span className="ml-1.5 normal-case tracking-normal text-foreground">
+              &mdash; {selectedCat.name}
             </span>
           )}
         </Label>
@@ -146,7 +146,14 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
 
       {/* Payment Method */}
       <div className="space-y-2">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</Label>
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Payment
+          {paymentMethod && (
+            <span className="ml-1.5 normal-case tracking-normal text-foreground">
+              &mdash; {PAYMENT_METHODS.find((p) => p.value === paymentMethod)?.label}
+            </span>
+          )}
+        </Label>
         <div className="grid grid-cols-4 gap-2">
           {PAYMENT_METHODS.map((pm) => {
             const isSelected = paymentMethod === pm.value;
