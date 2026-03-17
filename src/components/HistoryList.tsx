@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { format } from "date-fns";
-import { Trash2, Search, Filter } from "lucide-react";
+import { Trash2, Search, Filter, X } from "lucide-react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CURRENCY_SYMBOL, PAYMENT_METHODS } from "@/lib/constants";
 import { deleteExpense, getExpenses } from "@/lib/actions";
@@ -80,7 +81,13 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
   const hasFilters = search || categoryFilter || paymentFilter;
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4"
+    >
+      {/* Search & Filter Bar */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -89,23 +96,23 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleFilter()}
-            className="pl-9"
+            className="pl-9 rounded-xl"
           />
         </div>
         <Sheet>
-          <SheetTrigger className="relative inline-flex h-10 w-10 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground">
+          <SheetTrigger className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
             <Filter className="h-4 w-4" />
             {hasFilters && (
-              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />
+              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
             )}
           </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-2xl">
+          <SheetContent side="bottom" className="rounded-t-3xl">
             <SheetHeader>
-              <SheetTitle>Filters</SheetTitle>
+              <SheetTitle className="font-display">Filters</SheetTitle>
             </SheetHeader>
             <div className="mt-4 space-y-4">
               <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v ?? "")}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -118,7 +125,7 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
               </Select>
 
               <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v ?? "")}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="All Payment Methods" />
                 </SelectTrigger>
                 <SelectContent>
@@ -131,12 +138,12 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
               </Select>
 
               <div className="flex gap-2">
-                <Button onClick={handleFilter} className="flex-1" disabled={isPending}>
-                  Apply
+                <Button onClick={handleFilter} className="flex-1 rounded-xl gradient-primary hover:opacity-90 transition-opacity" disabled={isPending}>
+                  Apply Filters
                 </Button>
                 {hasFilters && (
-                  <Button variant="outline" onClick={clearFilters} disabled={isPending}>
-                    Clear
+                  <Button variant="outline" onClick={clearFilters} disabled={isPending} className="rounded-xl">
+                    <X className="h-4 w-4" />
                   </Button>
                 )}
               </div>
@@ -145,62 +152,79 @@ export function HistoryList({ initialExpenses, total, categories }: HistoryListP
         </Sheet>
       </div>
 
-      <p className="text-xs font-medium text-muted-foreground">
+      {/* Count */}
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         {count} expense{count !== 1 ? "s" : ""}
       </p>
 
+      {/* List */}
       {expenses.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">No expenses found</p>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="py-16 text-center text-sm text-muted-foreground"
+        >
+          No expenses found
+        </motion.p>
       ) : (
         <div className="space-y-2">
-          {expenses.map((expense) => (
-            <div
-              key={expense.id}
-              className={cn(
-                "flex items-center gap-3 rounded-xl border bg-card p-3 transition-opacity",
-                isPending && "opacity-50"
-              )}
-            >
-              <CategoryIcon
-                name={expense.category.icon}
-                color={expense.category.color}
-                size="md"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {expense.description || expense.category.name}
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>{format(new Date(expense.expenseDate), "d MMM yyyy")}</span>
-                  <span>·</span>
-                  <span>{expense.paymentMethod}</span>
-                </div>
-                {expense.tags.length > 0 && (
-                  <div className="mt-1 flex gap-1">
-                    {expense.tags.map((et) => (
-                      <Badge key={et.tagId} variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {et.tag.name}
-                      </Badge>
-                    ))}
-                  </div>
+          <AnimatePresence mode="popLayout">
+            {expenses.map((expense, i) => (
+              <motion.div
+                key={expense.id}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -60, transition: { duration: 0.2 } }}
+                transition={{ duration: 0.35, delay: i * 0.03 }}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border border-border/50 bg-card p-3.5 transition-all hover:shadow-sm hover:border-border",
+                  isPending && "opacity-50"
                 )}
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <p className="text-sm font-semibold tabular-nums">
-                  {CURRENCY_SYMBOL}{Number(expense.amount).toLocaleString("en-IN")}
-                </p>
-                <button
-                  onClick={() => handleDelete(expense.id)}
-                  className="text-muted-foreground hover:text-destructive transition-colors"
-                  disabled={isPending}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
+              >
+                <CategoryIcon
+                  name={expense.category.icon}
+                  color={expense.category.color}
+                  size="md"
+                  glow
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    {expense.description || expense.category.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                    <span>{format(new Date(expense.expenseDate), "d MMM yyyy")}</span>
+                    <span className="text-border">·</span>
+                    <span>{expense.paymentMethod}</span>
+                  </div>
+                  {expense.tags.length > 0 && (
+                    <div className="mt-1.5 flex gap-1">
+                      {expense.tags.map((et) => (
+                        <Badge key={et.tagId} variant="secondary" className="text-[10px] px-2 py-0 rounded-full">
+                          {et.tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col items-end gap-1.5">
+                  <p className="text-sm font-semibold tabular-nums">
+                    {CURRENCY_SYMBOL}{Number(expense.amount).toLocaleString("en-IN")}
+                  </p>
+                  <motion.button
+                    whileTap={{ scale: 0.8 }}
+                    onClick={() => handleDelete(expense.id)}
+                    className="rounded-lg p-1 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    disabled={isPending}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </motion.button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

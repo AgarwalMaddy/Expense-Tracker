@@ -30,6 +30,7 @@ interface CategoryIconProps {
   color?: string;
   size?: "sm" | "md" | "lg";
   className?: string;
+  glow?: boolean;
 }
 
 const sizeMap = {
@@ -39,24 +40,34 @@ const sizeMap = {
 };
 
 const containerSizeMap = {
-  sm: "h-8 w-8",
-  md: "h-10 w-10",
-  lg: "h-12 w-12",
+  sm: "h-9 w-9",
+  md: "h-11 w-11",
+  lg: "h-13 w-13",
 };
 
-export function CategoryIcon({ name, color, size = "md", className }: CategoryIconProps) {
+export function CategoryIcon({ name, color, size = "md", className, glow }: CategoryIconProps) {
   const Icon = ICON_MAP[name] || Package;
 
   if (color) {
     return (
       <div
-        className={cn("flex items-center justify-center rounded-xl", containerSizeMap[size], className)}
-        style={{ backgroundColor: `${color}15` }}
+        className={cn(
+          "relative flex items-center justify-center rounded-xl transition-transform",
+          containerSizeMap[size],
+          className
+        )}
+        style={{ backgroundColor: `${color}12` }}
       >
-        <Icon className={sizeMap[size]} style={{ color }} />
+        {glow && (
+          <div
+            className="absolute inset-0 rounded-xl opacity-40 blur-lg"
+            style={{ backgroundColor: `${color}30` }}
+          />
+        )}
+        <Icon className={cn(sizeMap[size], "relative")} style={{ color }} strokeWidth={2} />
       </div>
     );
   }
 
-  return <Icon className={cn(sizeMap[size], className)} />;
+  return <Icon className={cn(sizeMap[size], className)} strokeWidth={2} />;
 }

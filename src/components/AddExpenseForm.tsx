@@ -3,8 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHODS, CURRENCY_SYMBOL } from "@/lib/constants";
 import { createExpense } from "@/lib/actions";
@@ -24,6 +25,7 @@ interface AddExpenseFormProps {
 export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -52,6 +54,8 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
         });
 
         if (navigator.vibrate) navigator.vibrate(50);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 1500);
         toast.success("Expense added!");
         setAmount("");
         setCategoryId("");
@@ -66,12 +70,17 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
+      className="mx-auto max-w-2xl space-y-6 p-4 md:p-8"
+    >
       {/* Amount */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</Label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-2xl font-semibold text-muted-foreground">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-semibold text-muted-foreground/60">
             {CURRENCY_SYMBOL}
           </span>
           <Input
@@ -80,7 +89,7 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
             placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="h-16 pl-10 text-3xl font-bold"
+            className="h-16 pl-11 text-3xl font-bold rounded-2xl border-2 border-border/50 focus:border-primary/50 transition-colors"
             autoFocus
           />
         </div>
@@ -88,46 +97,51 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
 
       {/* Category Grid */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
-          {categories.map((cat) => (
-            <button
+          {categories.map((cat, i) => (
+            <motion.button
               key={cat.id}
               type="button"
               onClick={() => setCategoryId(cat.id)}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: i * 0.03 }}
+              whileTap={{ scale: 0.93 }}
               className={cn(
-                "flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-xs transition-all active:scale-95",
+                "flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
                 categoryId === cat.id
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-transparent bg-muted/50 hover:bg-muted"
+                  ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/10"
+                  : "border-transparent bg-muted/40 hover:bg-muted/70"
               )}
             >
-              <CategoryIcon name={cat.icon} color={cat.color} size="sm" />
+              <CategoryIcon name={cat.icon} color={cat.color} size="sm" glow={categoryId === cat.id} />
               <span className="truncate font-medium">{cat.name}</span>
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
 
       {/* Payment Method */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">Payment</Label>
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</Label>
         <div className="grid grid-cols-4 gap-2">
           {PAYMENT_METHODS.map((pm) => (
-            <button
+            <motion.button
               key={pm.value}
               type="button"
               onClick={() => setPaymentMethod(pm.value)}
+              whileTap={{ scale: 0.93 }}
               className={cn(
-                "flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-xs transition-all active:scale-95",
+                "flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all",
                 paymentMethod === pm.value
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-transparent bg-muted/50 hover:bg-muted"
+                  ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/10"
+                  : "border-transparent bg-muted/40 hover:bg-muted/70"
               )}
             >
               <CategoryIcon name={pm.icon} size="sm" />
               <span className="font-medium">{pm.label}</span>
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -135,13 +149,13 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Date */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</Label>
           <Popover>
-            <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-left text-sm font-normal ring-offset-background hover:bg-accent hover:text-accent-foreground">
-              <CalendarIcon className="mr-2 h-4 w-4" />
+            <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-xl border border-input bg-background px-3 py-2 text-left text-sm font-normal ring-offset-background hover:bg-accent hover:text-accent-foreground transition-colors">
+              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
               {format(date, "PPP")}
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 rounded-xl" align="start">
               <Calendar
                 mode="single"
                 selected={date}
@@ -154,34 +168,37 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
 
         {/* Description */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</Label>
           <Input
             placeholder="What was this for?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            className="rounded-xl"
           />
         </div>
       </div>
 
       {/* Notes */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">Notes (optional)</Label>
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes (optional)</Label>
         <Input
           placeholder="Any additional notes..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          className="rounded-xl"
         />
       </div>
 
       {/* Tags */}
       {tags.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">Tags</Label>
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tags</Label>
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
-              <button
+              <motion.button
                 key={tag.id}
                 type="button"
+                whileTap={{ scale: 0.9 }}
                 onClick={() =>
                   setSelectedTags((prev) =>
                     prev.includes(tag.id)
@@ -190,28 +207,63 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
                   )
                 }
                 className={cn(
-                  "rounded-full border px-3 py-1 text-xs font-medium transition-all active:scale-95",
+                  "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all",
                   selectedTags.includes(tag.id)
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border hover:bg-muted"
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                    : "border-border/60 hover:bg-muted/70 hover:border-border"
                 )}
               >
                 {tag.name}
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
       )}
 
       {/* Submit */}
-      <Button
-        onClick={handleSubmit}
-        disabled={isPending || !amount || !categoryId}
-        className="h-14 w-full text-base font-semibold md:w-auto md:px-12"
-        size="lg"
-      >
-        {isPending ? "Adding..." : "Add Expense"}
-      </Button>
-    </div>
+      <motion.div whileTap={{ scale: 0.98 }}>
+        <Button
+          onClick={handleSubmit}
+          disabled={isPending || !amount || !categoryId}
+          className="relative h-14 w-full rounded-2xl text-base font-semibold gradient-primary hover:opacity-90 transition-opacity md:w-auto md:px-16"
+          size="lg"
+        >
+          <AnimatePresence mode="wait">
+            {isPending ? (
+              <motion.span
+                key="loading"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center gap-2"
+              >
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Adding...
+              </motion.span>
+            ) : showSuccess ? (
+              <motion.span
+                key="success"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center gap-2"
+              >
+                <Check className="h-5 w-5" />
+                Added!
+              </motion.span>
+            ) : (
+              <motion.span
+                key="default"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+              >
+                Add Expense
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Button>
+      </motion.div>
+    </motion.div>
   );
 }

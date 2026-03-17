@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PlusCircle, Clock, Settings } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -17,9 +18,9 @@ export function BottomNav() {
 
   return (
     <>
-      {/* Mobile: bottom bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-        <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
+      {/* Mobile: floating bottom bar */}
+      <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
+        <div className="mx-auto flex h-16 max-w-md items-center justify-around rounded-2xl glass-strong shadow-lg shadow-black/5">
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href;
             return (
@@ -27,14 +28,23 @@ export function BottomNav() {
                 key={href}
                 href={href}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-3 py-2 text-[11px] font-medium transition-colors",
+                  "relative flex flex-col items-center gap-1 px-4 py-2 text-[11px] font-medium transition-colors",
                   isActive
-                    ? "text-foreground"
+                    ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} />
-                <span>{label}</span>
+                <div className="relative">
+                  <Icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-indicator-mobile"
+                      className="absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary"
+                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                </div>
+                <span className={cn(isActive && "font-semibold")}>{label}</span>
               </Link>
             );
           })}
@@ -42,8 +52,8 @@ export function BottomNav() {
       </nav>
 
       {/* Desktop: side bar */}
-      <nav className="fixed left-0 top-14 z-40 hidden h-[calc(100vh-3.5rem)] w-56 border-r bg-background p-4 md:block">
-        <div className="space-y-1">
+      <nav className="fixed left-0 top-14 z-40 hidden h-[calc(100vh-3.5rem)] w-60 border-r border-border/50 bg-background/50 backdrop-blur-xl p-5 md:block">
+        <div className="space-y-1 mt-2">
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href;
             return (
@@ -51,14 +61,21 @@ export function BottomNav() {
                 key={href}
                 href={href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "group relative flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-all",
                   isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className="h-4 w-4" />
-                <span>{label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-indicator-desktop"
+                    className="absolute inset-0 rounded-xl bg-primary/8 border border-primary/15"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <Icon className={cn("relative h-[18px] w-[18px]", isActive && "text-primary")} />
+                <span className="relative">{label}</span>
               </Link>
             );
           })}

@@ -17,6 +17,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import {
   Banknote, Smartphone, CreditCard, Globe, type LucideIcon,
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface CategoryData {
   category: { name: string; icon: string; color: string };
@@ -33,6 +34,16 @@ interface PaymentData {
   method: string;
   total: number;
 }
+
+const tooltipStyle = {
+  contentStyle: {
+    borderRadius: "12px",
+    border: "1px solid oklch(0.915 0.008 260)",
+    boxShadow: "0 8px 30px oklch(0 0 0 / 0.08)",
+    padding: "8px 12px",
+    fontSize: "13px",
+  },
+};
 
 export function CategoryPieChart({ data }: { data: CategoryData[] }) {
   if (data.length === 0) {
@@ -54,29 +65,38 @@ export function CategoryPieChart({ data }: { data: CategoryData[] }) {
             cx="50%"
             cy="50%"
             outerRadius={80}
-            innerRadius={40}
+            innerRadius={45}
+            paddingAngle={2}
+            cornerRadius={4}
           >
             {data.map((entry, i) => (
-              <Cell key={i} fill={entry.category.color} />
+              <Cell key={i} fill={entry.category.color} strokeWidth={0} />
             ))}
           </Pie>
           <Tooltip
+            {...tooltipStyle}
             formatter={(value) => `${CURRENCY_SYMBOL}${Number(value).toLocaleString("en-IN")}`}
           />
         </PieChart>
       </ResponsiveContainer>
-      <div className="flex flex-1 flex-col gap-2">
+      <div className="flex flex-1 flex-col gap-2.5">
         {data
           .sort((a, b) => b.total - a.total)
           .slice(0, 5)
-          .map((entry) => (
-            <div key={entry.category.name} className="flex items-center gap-2.5 text-xs">
+          .map((entry, i) => (
+            <motion.div
+              key={entry.category.name}
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.06 }}
+              className="flex items-center gap-2.5 text-xs"
+            >
               <CategoryIcon name={entry.category.icon} color={entry.category.color} size="sm" />
               <span className="flex-1 truncate font-medium">{entry.category.name}</span>
               <span className="font-semibold tabular-nums">
                 {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}
               </span>
-            </div>
+            </motion.div>
           ))}
       </div>
     </div>
@@ -94,17 +114,25 @@ export function DailyBarChart({ data }: { data: DailyData[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+      <BarChart data={data} barCategoryGap="20%">
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.915 0.008 260)" />
         <XAxis
           dataKey="date"
           tickFormatter={(v: string) => new Date(v).getDate().toString()}
           fontSize={11}
           tickLine={false}
           axisLine={false}
+          stroke="oklch(0.52 0.02 261)"
         />
-        <YAxis fontSize={11} tickLine={false} axisLine={false} width={40} />
+        <YAxis
+          fontSize={11}
+          tickLine={false}
+          axisLine={false}
+          width={40}
+          stroke="oklch(0.52 0.02 261)"
+        />
         <Tooltip
+          {...tooltipStyle}
           formatter={(value) => `${CURRENCY_SYMBOL}${Number(value).toLocaleString("en-IN")}`}
           labelFormatter={(label) =>
             new Date(String(label)).toLocaleDateString("en-IN", {
@@ -113,7 +141,13 @@ export function DailyBarChart({ data }: { data: DailyData[] }) {
             })
           }
         />
-        <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        <defs>
+          <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="oklch(0.488 0.243 264)" />
+            <stop offset="100%" stopColor="oklch(0.623 0.214 259)" />
+          </linearGradient>
+        </defs>
+        <Bar dataKey="total" fill="url(#barGrad)" radius={[6, 6, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -145,38 +179,47 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3.5">
       {data
         .filter((d) => d.total > 0)
         .sort((a, b) => b.total - a.total)
-        .map((entry) => {
+        .map((entry, i) => {
           const pct = ((entry.total / total) * 100).toFixed(0);
           const Icon = PAYMENT_ICONS[entry.method] || Globe;
           const color = PAYMENT_COLORS[entry.method] || "#6b7280";
           return (
-            <div key={entry.method} className="space-y-1.5">
+            <motion.div
+              key={entry.method}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className="space-y-2"
+            >
               <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2.5">
                   <div
-                    className="flex h-7 w-7 items-center justify-center rounded-lg"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl"
                     style={{ backgroundColor: `${color}15` }}
                   >
-                    <Icon className="h-3.5 w-3.5" style={{ color }} />
+                    <Icon className="h-4 w-4" style={{ color }} />
                   </div>
                   <span className="font-medium">{entry.method}</span>
                 </span>
                 <span className="font-semibold tabular-nums">
                   {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}
-                  <span className="ml-1 text-xs font-normal text-muted-foreground">({pct}%)</span>
+                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">({pct}%)</span>
                 </span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${pct}%`, backgroundColor: color }}
+              <div className="h-2 overflow-hidden rounded-full bg-muted/60">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ duration: 0.8, delay: 0.2 + i * 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: color }}
                 />
               </div>
-            </div>
+            </motion.div>
           );
         })}
     </div>

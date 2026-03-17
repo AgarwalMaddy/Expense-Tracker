@@ -4,7 +4,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <BottomNav />
-      <div className="md:ml-56">
+      <div className="md:ml-60">
         {children}
       </div>
     </>
