@@ -90,7 +90,6 @@ export function AddExpenseForm({ categories, tags }: AddExpenseFormProps) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="h-16 pl-11 text-3xl font-bold rounded-2xl border-2 border-border/50 focus:border-primary/50 transition-colors"
-            autoFocus
           />
         </div>
       </div>
