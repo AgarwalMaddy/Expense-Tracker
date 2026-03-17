@@ -3,7 +3,8 @@
 import {
   UtensilsCrossed, Car, ShoppingCart, ShoppingBag, HeartPulse,
   FileText, Clapperboard, House, GraduationCap, Sparkles, Package,
-  Banknote, Smartphone, CreditCard, Globe, type LucideIcon,
+  Banknote, Smartphone, SmartphoneNfc, CreditCard, Wallet, Landmark,
+  Globe, type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   package: Package,
   banknote: Banknote,
   smartphone: Smartphone,
+  "smartphone-nfc": SmartphoneNfc,
   "credit-card": CreditCard,
+  wallet: Wallet,
+  landmark: Landmark,
   globe: Globe,
 };
 

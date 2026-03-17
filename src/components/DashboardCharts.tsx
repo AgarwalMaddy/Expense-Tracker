@@ -15,7 +15,8 @@ import {
 import { CURRENCY_SYMBOL } from "@/lib/constants";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import {
-  Banknote, Smartphone, CreditCard, Globe, type LucideIcon,
+  Banknote, Smartphone, SmartphoneNfc, CreditCard, Wallet, Landmark,
+  Globe, type LucideIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -155,16 +156,29 @@ export function DailyBarChart({ data }: { data: DailyData[] }) {
 
 const PAYMENT_ICONS: Record<string, LucideIcon> = {
   CASH: Banknote,
-  UPI: Smartphone,
-  CARD: CreditCard,
-  ONLINE: Globe,
+  UPI_BANK: Smartphone,
+  UPI_CC: SmartphoneNfc,
+  CREDIT_CARD: CreditCard,
+  DEBIT_CARD: Wallet,
+  NET_BANKING: Landmark,
 };
 
 const PAYMENT_COLORS: Record<string, string> = {
   CASH: "#22c55e",
-  UPI: "#8b5cf6",
-  CARD: "#3b82f6",
-  ONLINE: "#f97316",
+  UPI_BANK: "#8b5cf6",
+  UPI_CC: "#a855f7",
+  CREDIT_CARD: "#3b82f6",
+  DEBIT_CARD: "#06b6d4",
+  NET_BANKING: "#f97316",
+};
+
+const PAYMENT_LABELS: Record<string, string> = {
+  CASH: "Cash",
+  UPI_BANK: "UPI (Bank)",
+  UPI_CC: "UPI (CC)",
+  CREDIT_CARD: "Credit Card",
+  DEBIT_CARD: "Debit Card",
+  NET_BANKING: "Net Banking",
 };
 
 export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
@@ -203,7 +217,7 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
                   >
                     <Icon className="h-4 w-4" style={{ color }} />
                   </div>
-                  <span className="font-medium">{entry.method}</span>
+                  <span className="font-medium">{PAYMENT_LABELS[entry.method] || entry.method}</span>
                 </span>
                 <span className="font-semibold tabular-nums">
                   {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}

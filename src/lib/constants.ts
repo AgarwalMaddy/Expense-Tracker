@@ -14,9 +14,15 @@ export const DEFAULT_CATEGORIES = [
 
 export const PAYMENT_METHODS = [
   { value: "CASH", label: "Cash", icon: "banknote" },
-  { value: "UPI", label: "UPI", icon: "smartphone" },
-  { value: "CARD", label: "Card", icon: "credit-card" },
-  { value: "ONLINE", label: "Online", icon: "globe" },
+  { value: "UPI_BANK", label: "UPI (Bank)", icon: "smartphone" },
+  { value: "UPI_CC", label: "UPI (CC)", icon: "smartphone-nfc" },
+  { value: "CREDIT_CARD", label: "Credit Card", icon: "credit-card" },
+  { value: "DEBIT_CARD", label: "Debit Card", icon: "wallet" },
+  { value: "NET_BANKING", label: "Net Banking", icon: "landmark" },
 ] as const;
+
+export const PAYMENT_LABEL_MAP: Record<string, string> = Object.fromEntries(
+  PAYMENT_METHODS.map((pm) => [pm.value, pm.label])
+);
 
 export const CURRENCY_SYMBOL = "₹";

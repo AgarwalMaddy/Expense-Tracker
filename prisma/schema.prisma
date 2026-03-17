@@ -64,7 +64,9 @@ model ExpenseTag {
 
 enum PaymentMethod {
   CASH
-  UPI
-  CARD
-  ONLINE
+  UPI_BANK
+  UPI_CC
+  CREDIT_CARD
+  DEBIT_CARD
+  NET_BANKING
 }

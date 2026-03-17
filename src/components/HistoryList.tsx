@@ -6,7 +6,7 @@ import { Trash2, Search, Filter, X, Pencil, CalendarIcon, Check, Loader2 } from 
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { CURRENCY_SYMBOL, PAYMENT_METHODS } from "@/lib/constants";
+import { CURRENCY_SYMBOL, PAYMENT_METHODS, PAYMENT_LABEL_MAP } from "@/lib/constants";
 import { deleteExpense, getExpenses, updateExpense } from "@/lib/actions";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Input } from "@/components/ui/input";
@@ -72,7 +72,7 @@ function EditExpenseSheet({
         await updateExpense(expense.id, {
           amount: parseFloat(amount),
           categoryId,
-          paymentMethod: paymentMethod as "CASH" | "UPI" | "CARD" | "ONLINE",
+          paymentMethod: paymentMethod as "CASH" | "UPI_BANK" | "UPI_CC" | "CREDIT_CARD" | "DEBIT_CARD" | "NET_BANKING",
           description: description || undefined,
           notes: notes || undefined,
           expenseDate: date.toISOString(),
@@ -159,7 +159,7 @@ function EditExpenseSheet({
       {/* Payment */}
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</Label>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {PAYMENT_METHODS.map((pm) => {
             const isSelected = paymentMethod === pm.value;
             return (
@@ -285,7 +285,7 @@ export function HistoryList({ initialExpenses, total, categories, tags }: Histor
       const result = await getExpenses({
         search: search || undefined,
         categoryId: categoryFilter || undefined,
-        paymentMethod: paymentFilter as "CASH" | "UPI" | "CARD" | "ONLINE" | undefined,
+        paymentMethod: paymentFilter as "CASH" | "UPI_BANK" | "UPI_CC" | "CREDIT_CARD" | "DEBIT_CARD" | "NET_BANKING" | undefined,
         limit: 50,
       });
       setExpenses(result.expenses as ExpenseWithRelations[]);
@@ -438,7 +438,7 @@ export function HistoryList({ initialExpenses, total, categories, tags }: Histor
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                     <span>{format(new Date(expense.expenseDate), "d MMM yyyy")}</span>
                     <span className="text-border">·</span>
-                    <span>{expense.paymentMethod}</span>
+                    <span>{PAYMENT_LABEL_MAP[expense.paymentMethod] || expense.paymentMethod}</span>
                   </div>
                   {expense.tags.length > 0 && (
                     <div className="mt-1.5 flex gap-1">
