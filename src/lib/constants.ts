@@ -13,11 +13,11 @@ export const DEFAULT_CATEGORIES = [
 ] as const;
 
 export const DEFAULT_PAYMENT_METHODS = [
-  { name: "Cash", icon: "banknote", color: "#22c55e" },
-  { name: "UPI", icon: "smartphone", color: "#8b5cf6" },
-  { name: "Credit Card", icon: "credit-card", color: "#3b82f6" },
-  { name: "Debit Card", icon: "wallet", color: "#06b6d4" },
-  { name: "Net Banking", icon: "landmark", color: "#f97316" },
+  { name: "Cash", icon: "banknote", color: "#22c55e", type: "SIMPLE" as const },
+  { name: "UPI", icon: "smartphone", color: "#8b5cf6", type: "SIMPLE" as const },
+  { name: "Credit Card", icon: "credit-card", color: "#3b82f6", type: "CREDIT" as const },
+  { name: "Debit Card", icon: "wallet", color: "#06b6d4", type: "SIMPLE" as const },
+  { name: "Net Banking", icon: "landmark", color: "#f97316", type: "SIMPLE" as const },
 ] as const;
 
 export const AVAILABLE_ICONS = [

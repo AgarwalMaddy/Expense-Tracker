@@ -1,17 +1,20 @@
-import { getDashboardData } from "@/lib/actions";
+import { getDashboardData, getCreditCardSummary } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryPieChart, PaymentBreakdown } from "@/components/DashboardCharts";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CURRENCY_SYMBOL } from "@/lib/constants";
 import { format } from "date-fns";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Receipt, Wallet } from "lucide-react";
+import { ArrowRight, TrendingUp, Receipt, Wallet, CreditCard, ArrowLeftRight } from "lucide-react";
 import { DashboardClient } from "@/components/DashboardClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const data = await getDashboardData();
+  const [data, creditSummary] = await Promise.all([
+    getDashboardData(),
+    getCreditCardSummary(),
+  ]);
   const monthLabel = format(new Date(), "MMMM yyyy");
 
   return (
@@ -81,6 +84,88 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
+        {/* Credit Card Summary */}
+        {creditSummary.length > 0 && (
+          <Card data-animate className="overflow-hidden border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <CreditCard className="h-4 w-4 text-primary" />
+                Credit Cards
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {creditSummary.map((cs) => (
+                <div key={cs.card.id} className="space-y-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <CategoryIcon name={cs.card.icon} color={cs.card.color} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{cs.card.name}</p>
+                      {cs.card.bankName && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {cs.card.bankName}
+                          {cs.card.lastFourDigits && ` ••${cs.card.lastFourDigits}`}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold tabular-nums">
+                        {CURRENCY_SYMBOL}{cs.outstanding.toLocaleString("en-IN")}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">outstanding</p>
+                    </div>
+                  </div>
+
+                  {/* Utilization bar */}
+                  {cs.creditLimit > 0 && cs.utilization !== null && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>
+                          {CURRENCY_SYMBOL}{cs.outstanding.toLocaleString("en-IN")} / {CURRENCY_SYMBOL}{cs.creditLimit.toLocaleString("en-IN")}
+                        </span>
+                        <span className={cs.utilization > 80 ? "text-destructive font-semibold" : ""}>
+                          {cs.utilization.toFixed(0)}% used
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted/60">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${Math.min(100, cs.utilization)}%`,
+                            backgroundColor:
+                              cs.utilization > 80
+                                ? "#ef4444"
+                                : cs.utilization > 50
+                                  ? "#f97316"
+                                  : cs.card.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Spent / Settled row */}
+                  <div className="flex gap-4 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Receipt className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">Spent:</span>
+                      <span className="font-semibold tabular-nums">
+                        {CURRENCY_SYMBOL}{cs.totalSpent.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <ArrowLeftRight className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">Settled:</span>
+                      <span className="font-semibold tabular-nums text-emerald-600">
+                        {CURRENCY_SYMBOL}{cs.totalSettled.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Charts Row */}
         <div className="grid gap-4 md:grid-cols-2">
           <Card data-animate className="overflow-hidden">
@@ -135,11 +220,19 @@ export default async function DashboardPage() {
                         glow
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {expense.description || expense.category.name}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="truncate text-sm font-medium">
+                            {expense.description || expense.category.name}
+                          </p>
+                          {expense.type === "SETTLEMENT" && (
+                            <span className="shrink-0 text-[9px] font-bold text-emerald-600 bg-emerald-500/10 rounded-full px-1.5 py-0.5">
+                              SETTLEMENT
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(expense.expenseDate), "d MMM")} · {expense.paymentMethod.name}
+                          {expense.settlesPaymentMethod && ` → ${expense.settlesPaymentMethod.name}`}
                         </p>
                       </div>
                       <p className="text-sm font-semibold tabular-nums">

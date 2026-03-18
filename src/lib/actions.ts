@@ -27,7 +27,6 @@ const EMOJI_TO_LUCIDE: Record<string, string> = {
 
 export async function ensureDefaultCategories() {
   const userId = await getUserId();
-
   const existing = await prisma.category.findMany({ where: { userId } });
 
   if (existing.length === 0) {
@@ -65,6 +64,7 @@ export async function ensureDefaultPaymentMethods() {
         icon: pm.icon,
         color: pm.color,
         isDefault: true,
+        type: pm.type,
       })),
     });
   }
@@ -88,10 +88,24 @@ export async function getPaymentMethods() {
   });
 }
 
+export async function getCreditPaymentMethods() {
+  const userId = await getUserId();
+  return prisma.paymentMethod.findMany({
+    where: { userId, type: "CREDIT" },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 export async function createPaymentMethod(data: {
   name: string;
   icon: string;
   color: string;
+  type?: "SIMPLE" | "CREDIT";
+  bankName?: string;
+  lastFourDigits?: string;
+  creditLimit?: number;
+  initialOutstanding?: number;
+  billingCycleDay?: number;
 }) {
   const userId = await getUserId();
   const pm = await prisma.paymentMethod.create({
@@ -100,10 +114,52 @@ export async function createPaymentMethod(data: {
       name: data.name.trim(),
       icon: data.icon,
       color: data.color,
+      type: data.type || "SIMPLE",
+      bankName: data.bankName?.trim() || null,
+      lastFourDigits: data.lastFourDigits?.trim() || null,
+      creditLimit: data.creditLimit ?? null,
+      initialOutstanding: data.initialOutstanding ?? null,
+      billingCycleDay: data.billingCycleDay ?? null,
     },
   });
   revalidatePath("/add");
   revalidatePath("/settings");
+  revalidatePath("/");
+  return pm;
+}
+
+export async function updatePaymentMethod(
+  id: string,
+  data: {
+    name?: string;
+    icon?: string;
+    color?: string;
+    type?: "SIMPLE" | "CREDIT";
+    bankName?: string | null;
+    lastFourDigits?: string | null;
+    creditLimit?: number | null;
+    initialOutstanding?: number | null;
+    billingCycleDay?: number | null;
+  }
+) {
+  const userId = await getUserId();
+  const pm = await prisma.paymentMethod.update({
+    where: { id, userId },
+    data: {
+      ...(data.name !== undefined && { name: data.name.trim() }),
+      ...(data.icon !== undefined && { icon: data.icon }),
+      ...(data.color !== undefined && { color: data.color }),
+      ...(data.type !== undefined && { type: data.type }),
+      ...(data.bankName !== undefined && { bankName: data.bankName }),
+      ...(data.lastFourDigits !== undefined && { lastFourDigits: data.lastFourDigits }),
+      ...(data.creditLimit !== undefined && { creditLimit: data.creditLimit }),
+      ...(data.initialOutstanding !== undefined && { initialOutstanding: data.initialOutstanding }),
+      ...(data.billingCycleDay !== undefined && { billingCycleDay: data.billingCycleDay }),
+    },
+  });
+  revalidatePath("/add");
+  revalidatePath("/settings");
+  revalidatePath("/");
   return pm;
 }
 
@@ -113,8 +169,13 @@ export async function deletePaymentMethod(id: string) {
   const usageCount = await prisma.expense.count({
     where: { userId, paymentMethodId: id },
   });
-  if (usageCount > 0) {
-    throw new Error(`Cannot delete — ${usageCount} expense(s) use this payment method`);
+  const settlementCount = await prisma.expense.count({
+    where: { userId, settlesPaymentMethodId: id },
+  });
+  if (usageCount > 0 || settlementCount > 0) {
+    throw new Error(
+      `Cannot delete — ${usageCount + settlementCount} expense(s)/settlement(s) reference this method`
+    );
   }
 
   await prisma.paymentMethod.delete({ where: { id, userId } });
@@ -148,6 +209,8 @@ export async function createExpense(data: {
   notes?: string;
   expenseDate: string;
   tagIds?: string[];
+  type?: "EXPENSE" | "SETTLEMENT";
+  settlesPaymentMethodId?: string;
 }) {
   const userId = await getUserId();
 
@@ -155,8 +218,10 @@ export async function createExpense(data: {
     data: {
       userId,
       amount: data.amount,
+      type: data.type || "EXPENSE",
       categoryId: data.categoryId,
       paymentMethodId: data.paymentMethodId,
+      settlesPaymentMethodId: data.settlesPaymentMethodId || null,
       description: data.description || null,
       notes: data.notes || null,
       expenseDate: new Date(data.expenseDate),
@@ -177,6 +242,7 @@ export async function getExpenses(params?: {
   categoryId?: string;
   paymentMethodId?: string;
   search?: string;
+  type?: "EXPENSE" | "SETTLEMENT";
   limit?: number;
   offset?: number;
 }) {
@@ -192,6 +258,7 @@ export async function getExpenses(params?: {
   }
   if (params?.categoryId) where.categoryId = params.categoryId;
   if (params?.paymentMethodId) where.paymentMethodId = params.paymentMethodId;
+  if (params?.type) where.type = params.type;
   if (params?.search) {
     where.OR = [
       { description: { contains: params.search, mode: "insensitive" } },
@@ -205,6 +272,7 @@ export async function getExpenses(params?: {
       include: {
         category: true,
         paymentMethod: true,
+        settlesPaymentMethod: true,
         tags: { include: { tag: true } },
       },
       orderBy: { expenseDate: "desc" },
@@ -269,27 +337,29 @@ export async function getDashboardData() {
   const startOfMonth = new Date(Date.UTC(istYear, istMonth, 1) - 5.5 * 60 * 60 * 1000);
   const endOfMonth = new Date(Date.UTC(istYear, istMonth + 1, 1) - 5.5 * 60 * 60 * 1000 - 1);
 
+  const expenseFilter = { userId, type: "EXPENSE" as const, expenseDate: { gte: startOfMonth, lte: endOfMonth } };
+
   const [monthlyExpenses, categoryBreakdown, paymentBreakdown, recentExpenses] =
     await Promise.all([
       prisma.expense.aggregate({
-        where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
+        where: expenseFilter,
         _sum: { amount: true },
         _count: true,
       }),
       prisma.expense.groupBy({
         by: ["categoryId"],
-        where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
+        where: expenseFilter,
         _sum: { amount: true },
         _count: true,
       }),
       prisma.expense.groupBy({
         by: ["paymentMethodId"],
-        where: { userId, expenseDate: { gte: startOfMonth, lte: endOfMonth } },
+        where: expenseFilter,
         _sum: { amount: true },
       }),
       prisma.expense.findMany({
         where: { userId },
-        include: { category: true, paymentMethod: true },
+        include: { category: true, paymentMethod: true, settlesPaymentMethod: true },
         orderBy: { expenseDate: "desc" },
         take: 5,
       }),
@@ -319,4 +389,48 @@ export async function getDashboardData() {
     })),
     recentExpenses,
   };
+}
+
+export async function getCreditCardSummary() {
+  const userId = await getUserId();
+
+  const creditMethods = await prisma.paymentMethod.findMany({
+    where: { userId, type: "CREDIT" },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (creditMethods.length === 0) return [];
+
+  const summaries = await Promise.all(
+    creditMethods.map(async (card) => {
+      const [expenseTotal, settlementTotal] = await Promise.all([
+        prisma.expense.aggregate({
+          where: { userId, paymentMethodId: card.id, type: "EXPENSE" },
+          _sum: { amount: true },
+        }),
+        prisma.expense.aggregate({
+          where: { userId, settlesPaymentMethodId: card.id, type: "SETTLEMENT" },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      const totalSpent = Number(expenseTotal._sum.amount || 0);
+      const totalSettled = Number(settlementTotal._sum.amount || 0);
+      const initialOutstanding = Number(card.initialOutstanding || 0);
+      const outstanding = initialOutstanding + totalSpent - totalSettled;
+      const creditLimit = Number(card.creditLimit || 0);
+
+      return {
+        card,
+        totalSpent,
+        totalSettled,
+        outstanding: Math.max(0, outstanding),
+        creditLimit,
+        availableCredit: creditLimit > 0 ? Math.max(0, creditLimit - outstanding) : null,
+        utilization: creditLimit > 0 ? Math.min(100, (outstanding / creditLimit) * 100) : null,
+      };
+    })
+  );
+
+  return summaries;
 }

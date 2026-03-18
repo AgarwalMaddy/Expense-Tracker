@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { format, isToday, isYesterday } from "date-fns";
-import { Trash2, Search, Filter, X, Pencil, CalendarIcon, Check, Loader2, ArrowUpDown } from "lucide-react";
+import { Trash2, Search, Filter, X, Pencil, CalendarIcon, Check, Loader2, ArrowUpDown, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,7 @@ import type {
 type ExpenseWithRelations = Expense & {
   category: Category;
   paymentMethod: PaymentMethod;
+  settlesPaymentMethod?: PaymentMethod | null;
   tags: (ExpenseTag & { tag: Tag })[];
 };
 
@@ -527,18 +528,32 @@ export function HistoryList({
                       isPending && "opacity-50"
                     )}
                   >
-                    <CategoryIcon
-                      name={expense.category.icon}
-                      color={expense.category.color}
-                      size="md"
-                      glow
-                    />
+                    {expense.type === "SETTLEMENT" ? (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
+                        <ArrowLeftRight className="h-5 w-5 text-emerald-600" />
+                      </div>
+                    ) : (
+                      <CategoryIcon
+                        name={expense.category.icon}
+                        color={expense.category.color}
+                        size="md"
+                        glow
+                      />
+                    )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {expense.description || expense.category.name}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-sm font-medium">
+                          {expense.description || expense.category.name}
+                        </p>
+                        {expense.type === "SETTLEMENT" && (
+                          <span className="shrink-0 text-[9px] font-bold text-emerald-600 bg-emerald-500/10 rounded-full px-1.5 py-0.5">
+                            SETTLEMENT
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-muted-foreground">
                         {expense.paymentMethod.name}
+                        {expense.settlesPaymentMethod && ` → ${expense.settlesPaymentMethod.name}`}
                       </span>
                       {expense.tags.length > 0 && (
                         <div className="mt-1.5 flex gap-1">

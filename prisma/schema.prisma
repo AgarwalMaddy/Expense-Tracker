@@ -7,6 +7,16 @@ datasource db {
   provider = "postgresql"
 }
 
+enum PaymentMethodType {
+  SIMPLE
+  CREDIT
+}
+
+enum ExpenseType {
+  EXPENSE
+  SETTLEMENT
+}
+
 model Category {
   id        String    @id @default(cuid())
   userId    String
@@ -22,14 +32,21 @@ model Category {
 }
 
 model PaymentMethod {
-  id        String    @id @default(cuid())
-  userId    String
-  name      String
-  icon      String
-  color     String    @default("#6366f1")
-  isDefault Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  expenses  Expense[]
+  id              String            @id @default(cuid())
+  userId          String
+  name            String
+  icon            String
+  color           String            @default("#6366f1")
+  isDefault       Boolean           @default(false)
+  type            PaymentMethodType @default(SIMPLE)
+  bankName        String?
+  lastFourDigits  String?
+  creditLimit     Decimal?          @db.Decimal(12, 2)
+  initialOutstanding Decimal?       @db.Decimal(12, 2)
+  billingCycleDay Int?
+  createdAt       DateTime          @default(now())
+  expenses        Expense[]
+  settlements     Expense[]         @relation("SettlementTarget")
 
   @@unique([userId, name])
   @@map("payment_methods")
@@ -47,24 +64,29 @@ model Tag {
 }
 
 model Expense {
-  id              String        @id @default(cuid())
-  userId          String
-  amount          Decimal       @db.Decimal(12, 2)
-  currency        String        @default("INR")
-  categoryId      String
-  category        Category      @relation(fields: [categoryId], references: [id])
-  paymentMethodId String
-  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
-  description     String?
-  notes           String?
-  expenseDate     DateTime      @default(now())
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  tags            ExpenseTag[]
+  id                      String        @id @default(cuid())
+  userId                  String
+  amount                  Decimal       @db.Decimal(12, 2)
+  currency                String        @default("INR")
+  type                    ExpenseType   @default(EXPENSE)
+  categoryId              String
+  category                Category      @relation(fields: [categoryId], references: [id])
+  paymentMethodId         String
+  paymentMethod           PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  settlesPaymentMethodId  String?
+  settlesPaymentMethod    PaymentMethod? @relation("SettlementTarget", fields: [settlesPaymentMethodId], references: [id])
+  description             String?
+  notes                   String?
+  expenseDate             DateTime      @default(now())
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  tags                    ExpenseTag[]
 
   @@index([userId, expenseDate])
   @@index([userId, categoryId])
   @@index([userId, paymentMethodId])
+  @@index([userId, type])
+  @@index([userId, settlesPaymentMethodId])
   @@map("expenses")
 }
 

@@ -10,11 +10,14 @@ export default async function AddPage() {
     getPaymentMethods(),
   ]);
 
+  const creditMethods = paymentMethods.filter((pm) => pm.type === "CREDIT");
+
   return (
     <AddExpenseForm
       categories={categories}
       tags={tags}
       paymentMethods={paymentMethods}
+      creditMethods={creditMethods}
     />
   );
 }
