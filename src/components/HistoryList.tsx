@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { format } from "date-fns";
-import { Trash2, Search, Filter, X, Pencil, CalendarIcon, Check, Loader2 } from "lucide-react";
+import { useState, useTransition, useMemo } from "react";
+import { format, isToday, isYesterday } from "date-fns";
+import { Trash2, Search, Filter, X, Pencil, CalendarIcon, Check, Loader2, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -155,7 +155,7 @@ function EditExpenseSheet({
                 )}
               >
                 {isSelected && (
-                  <div className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                  <div className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
                     <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
                   </div>
                 )}
@@ -188,7 +188,7 @@ function EditExpenseSheet({
                 )}
               >
                 {isSelected && (
-                  <div className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                  <div className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
                     <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
                   </div>
                 )}
@@ -286,6 +286,15 @@ function EditExpenseSheet({
   );
 }
 
+type SortOption = "newest" | "oldest" | "highest" | "lowest";
+
+function formatDateHeading(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  if (isToday(d)) return "Today";
+  if (isYesterday(d)) return "Yesterday";
+  return format(d, "EEEE, d MMM yyyy");
+}
+
 export function HistoryList({
   initialExpenses,
   total,
@@ -298,8 +307,56 @@ export function HistoryList({
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [paymentFilter, setPaymentFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [editingExpense, setEditingExpense] = useState<ExpenseWithRelations | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const sortedExpenses = useMemo(() => {
+    const sorted = [...expenses];
+    switch (sortBy) {
+      case "newest":
+        sorted.sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime());
+        break;
+      case "oldest":
+        sorted.sort((a, b) => new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime());
+        break;
+      case "highest":
+        sorted.sort((a, b) => Number(b.amount) - Number(a.amount));
+        break;
+      case "lowest":
+        sorted.sort((a, b) => Number(a.amount) - Number(b.amount));
+        break;
+    }
+    return sorted;
+  }, [expenses, sortBy]);
+
+  const groupedByDate = useMemo(() => {
+    const groups: { date: string; expenses: ExpenseWithRelations[]; dayTotal: number }[] = [];
+    const map = new Map<string, ExpenseWithRelations[]>();
+
+    for (const exp of sortedExpenses) {
+      const d = new Date(exp.expenseDate);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(exp);
+    }
+
+    for (const [date, exps] of map) {
+      groups.push({
+        date,
+        expenses: exps,
+        dayTotal: exps.reduce((s, e) => s + Number(e.amount), 0),
+      });
+    }
+
+    if (sortBy === "newest" || sortBy === "highest" || sortBy === "lowest") {
+      groups.sort((a, b) => b.date.localeCompare(a.date));
+    } else {
+      groups.sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    return groups;
+  }, [sortedExpenses, sortBy]);
 
   const handleFilter = () => {
     startTransition(async () => {
@@ -416,12 +473,26 @@ export function HistoryList({
         </Sheet>
       </div>
 
-      {/* Count */}
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        {count} expense{count !== 1 ? "s" : ""}
-      </p>
+      {/* Count + Sort */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {count} expense{count !== 1 ? "s" : ""}
+        </p>
+        <Select value={sortBy} onValueChange={(v) => setSortBy((v as SortOption) ?? "newest")}>
+          <SelectTrigger className="h-8 w-auto gap-1.5 rounded-lg border-border/50 bg-muted/40 px-2.5 text-xs font-medium">
+            <ArrowUpDown className="h-3 w-3" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="newest">Newest first</SelectItem>
+            <SelectItem value="oldest">Oldest first</SelectItem>
+            <SelectItem value="highest">Highest amount</SelectItem>
+            <SelectItem value="lowest">Lowest amount</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      {/* List */}
+      {/* Date-Grouped List */}
       {expenses.length === 0 ? (
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -431,72 +502,82 @@ export function HistoryList({
           No expenses found
         </motion.p>
       ) : (
-        <div className="space-y-2">
-          <AnimatePresence mode="popLayout">
-            {expenses.map((expense, i) => (
-              <motion.div
-                key={expense.id}
-                layout
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -60, transition: { duration: 0.2 } }}
-                transition={{ duration: 0.35, delay: i * 0.03 }}
-                className={cn(
-                  "flex items-center gap-3 rounded-2xl border border-border/50 bg-card p-3.5 transition-all hover:shadow-sm hover:border-border",
-                  isPending && "opacity-50"
-                )}
-              >
-                <CategoryIcon
-                  name={expense.category.icon}
-                  color={expense.category.color}
-                  size="md"
-                  glow
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {expense.description || expense.category.name}
-                  </p>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                    <span>{format(new Date(expense.expenseDate), "d MMM yyyy")}</span>
-                    <span className="text-border">·</span>
-                    <span>{expense.paymentMethod.name}</span>
-                  </div>
-                  {expense.tags.length > 0 && (
-                    <div className="mt-1.5 flex gap-1">
-                      {expense.tags.map((et) => (
-                        <Badge key={et.tagId} variant="secondary" className="text-[10px] px-2 py-0 rounded-full">
-                          {et.tag.name}
-                        </Badge>
-                      ))}
+        <div className="space-y-5">
+          {groupedByDate.map((group) => (
+            <div key={group.date} className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {formatDateHeading(group.date)}
+                </h3>
+                <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                  {CURRENCY_SYMBOL}{group.dayTotal.toLocaleString("en-IN")}
+                </span>
+              </div>
+              <AnimatePresence mode="popLayout">
+                {group.expenses.map((expense, i) => (
+                  <motion.div
+                    key={expense.id}
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -60, transition: { duration: 0.2 } }}
+                    transition={{ duration: 0.35, delay: i * 0.03 }}
+                    className={cn(
+                      "flex items-center gap-3 rounded-2xl border border-border/50 bg-card p-3.5 transition-all hover:shadow-sm hover:border-border",
+                      isPending && "opacity-50"
+                    )}
+                  >
+                    <CategoryIcon
+                      name={expense.category.icon}
+                      color={expense.category.color}
+                      size="md"
+                      glow
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {expense.description || expense.category.name}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {expense.paymentMethod.name}
+                      </span>
+                      {expense.tags.length > 0 && (
+                        <div className="mt-1.5 flex gap-1">
+                          {expense.tags.map((et) => (
+                            <Badge key={et.tagId} variant="secondary" className="text-[10px] px-2 py-0 rounded-full">
+                              {et.tag.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-1.5">
-                  <p className="text-sm font-semibold tabular-nums">
-                    {CURRENCY_SYMBOL}{Number(expense.amount).toLocaleString("en-IN")}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <motion.button
-                      whileTap={{ scale: 0.8 }}
-                      onClick={() => setEditingExpense(expense)}
-                      className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors"
-                      disabled={isPending}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.8 }}
-                      onClick={() => handleDelete(expense.id)}
-                      className="rounded-lg p-1 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      disabled={isPending}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </motion.button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <p className="text-sm font-semibold tabular-nums">
+                        {CURRENCY_SYMBOL}{Number(expense.amount).toLocaleString("en-IN")}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <motion.button
+                          whileTap={{ scale: 0.8 }}
+                          onClick={() => setEditingExpense(expense)}
+                          className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors"
+                          disabled={isPending}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </motion.button>
+                        <motion.button
+                          whileTap={{ scale: 0.8 }}
+                          onClick={() => handleDelete(expense.id)}
+                          className="rounded-lg p-1 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          disabled={isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          ))}
         </div>
       )}
 

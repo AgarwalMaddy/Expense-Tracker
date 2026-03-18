@@ -133,7 +133,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods }: AddExpenseF
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
                   >
                     <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
                   </motion.div>
@@ -176,10 +176,9 @@ export function AddExpenseForm({ categories, tags, paymentMethods }: AddExpenseF
               >
                 {isSelected && (
                   <motion.div
-                    layoutId="payment-check"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   >
                     <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
