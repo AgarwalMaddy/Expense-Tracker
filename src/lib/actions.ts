@@ -233,7 +233,13 @@ export async function updateExpense(id: unknown, rawData: unknown) {
   const data = updateExpenseSchema.parse(rawData);
   const userId = await getUserId();
 
-  await prisma.expenseTag.deleteMany({ where: { expenseId: validId } });
+  const tagUpdate =
+    data.tagIds !== undefined
+      ? {
+          deleteMany: {},
+          ...(data.tagIds.length > 0 ? { create: data.tagIds.map((tagId) => ({ tagId })) } : {}),
+        }
+      : undefined;
 
   const expense = await prisma.expense.update({
     where: { id: validId, userId },
@@ -244,7 +250,7 @@ export async function updateExpense(id: unknown, rawData: unknown) {
       description: data.description || null,
       notes: data.notes || null,
       expenseDate: new Date(data.expenseDate),
-      tags: data.tagIds?.length ? { create: data.tagIds.map((tagId) => ({ tagId })) } : undefined,
+      tags: tagUpdate,
     },
   });
 
@@ -339,33 +345,61 @@ export async function updateUserPreferences(rawData: unknown) {
 
 // --- Dashboard ---
 
-function getTimezoneOffsetMs(tz: string): number {
-  const offsets: Record<string, number> = {
-    "Asia/Kolkata": 5.5 * 60 * 60 * 1000,
-    "America/New_York": -5 * 60 * 60 * 1000,
-    "America/Chicago": -6 * 60 * 60 * 1000,
-    "America/Los_Angeles": -8 * 60 * 60 * 1000,
-    "Europe/London": 0,
-    "Europe/Berlin": 1 * 60 * 60 * 1000,
-    "Asia/Dubai": 4 * 60 * 60 * 1000,
-    "Asia/Singapore": 8 * 60 * 60 * 1000,
-    "Asia/Tokyo": 9 * 60 * 60 * 1000,
-    "Australia/Sydney": 11 * 60 * 60 * 1000,
-    "Pacific/Auckland": 13 * 60 * 60 * 1000,
-  };
-  return offsets[tz] ?? 5.5 * 60 * 60 * 1000;
+function getMonthBoundsForTimezone(tz: string): { startOfMonth: Date; endOfMonth: Date } {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  });
+
+  const parts = fmt.formatToParts(new Date());
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  const year = get("year");
+  const month = get("month");
+
+  // Build "YYYY-MM-01T00:00:00" in the target timezone, then find its UTC equivalent
+  // by computing the offset at that specific instant (handles DST correctly).
+  function tzDateToUTC(y: number, m: number, d: number): Date {
+    const guess = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    const localParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false,
+    }).formatToParts(guess);
+    const gp = (type: string) => Number(localParts.find((p) => p.type === type)?.value ?? 0);
+    const localAtGuess = Date.UTC(
+      gp("year"),
+      gp("month") - 1,
+      gp("day"),
+      gp("hour"),
+      gp("minute"),
+      gp("second")
+    );
+    const offsetMs = localAtGuess - guess.getTime();
+    return new Date(Date.UTC(y, m - 1, d, 0, 0, 0) - offsetMs);
+  }
+
+  const startOfMonth = tzDateToUTC(year, month, 1);
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const nextYear = month === 12 ? year + 1 : year;
+  const endOfMonth = new Date(tzDateToUTC(nextYear, nextMonth, 1).getTime() - 1);
+
+  return { startOfMonth, endOfMonth };
 }
 
 export async function getDashboardData() {
   const userId = await getUserId();
   const prefs = await getUserPreferences();
-  const offsetMs = getTimezoneOffsetMs(prefs.timezone);
-
-  const tzNow = new Date(Date.now() + offsetMs);
-  const tzYear = tzNow.getUTCFullYear();
-  const tzMonth = tzNow.getUTCMonth();
-  const startOfMonth = new Date(Date.UTC(tzYear, tzMonth, 1) - offsetMs);
-  const endOfMonth = new Date(Date.UTC(tzYear, tzMonth + 1, 1) - offsetMs - 1);
+  const { startOfMonth, endOfMonth } = getMonthBoundsForTimezone(prefs.timezone);
 
   const expenseFilter = {
     userId,
