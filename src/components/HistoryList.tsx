@@ -35,6 +35,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { exportExpensesCSV } from "@/lib/actions";
+import { Download } from "lucide-react";
 import type { Category, Expense, ExpenseTag, Tag, PaymentMethod } from "@/generated/prisma/client";
 
 type ExpenseWithRelations = Expense & {
@@ -84,41 +94,42 @@ function EditExpenseSheet({
     }
 
     startTransition(async () => {
-      try {
-        await updateExpense(expense.id, {
-          amount: parseFloat(amount),
-          categoryId,
-          paymentMethodId,
-          description: description || undefined,
-          notes: notes || undefined,
-          expenseDate: date.toISOString(),
-          tagIds: selectedTags.length > 0 ? selectedTags : undefined,
-        });
+      const result = await updateExpense(expense.id, {
+        amount: parseFloat(amount),
+        categoryId,
+        paymentMethodId,
+        description: description || undefined,
+        notes: notes || undefined,
+        expenseDate: date.toISOString(),
+        tagIds: selectedTags.length > 0 ? selectedTags : undefined,
+      });
 
-        const cat = categories.find((c) => c.id === categoryId)!;
-        const pm = paymentMethods.find((p) => p.id === paymentMethodId)!;
-        onSave({
-          ...expense,
-          amount: parseFloat(amount) as unknown as Expense["amount"],
-          categoryId,
-          category: cat,
-          paymentMethodId,
-          paymentMethod: pm,
-          description: description || null,
-          notes: notes || null,
-          expenseDate: date,
-          tags: selectedTags.map((tagId) => ({
-            expenseId: expense.id,
-            tagId,
-            tag: tags.find((t) => t.id === tagId)!,
-          })),
-        });
-
-        toast.success("Expense updated");
-        onClose();
-      } catch {
-        toast.error("Failed to update");
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+
+      const cat = categories.find((c) => c.id === categoryId)!;
+      const pm = paymentMethods.find((p) => p.id === paymentMethodId)!;
+      onSave({
+        ...expense,
+        amount: parseFloat(amount) as unknown as Expense["amount"],
+        categoryId,
+        category: cat,
+        paymentMethodId,
+        paymentMethod: pm,
+        description: description || null,
+        notes: notes || null,
+        expenseDate: date,
+        tags: selectedTags.map((tagId) => ({
+          expenseId: expense.id,
+          tagId,
+          tag: tags.find((t) => t.id === tagId)!,
+        })),
+      });
+
+      toast.success("Expense updated");
+      onClose();
     });
   };
 
@@ -342,6 +353,7 @@ export function HistoryList({
   const [paymentFilter, setPaymentFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [editingExpense, setEditingExpense] = useState<ExpenseWithRelations | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<ExpenseWithRelations | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const sortedExpenses = useMemo(() => {
@@ -408,21 +420,42 @@ export function HistoryList({
     });
   };
 
-  const handleDelete = (id: string) => {
+  const confirmDelete = () => {
+    if (!deletingExpense) return;
+    const id = deletingExpense.id;
+    setDeletingExpense(null);
     startTransition(async () => {
-      try {
-        await deleteExpense(id);
-        setExpenses((prev) => prev.filter((e) => e.id !== id));
-        setCount((prev) => prev - 1);
-        toast.success("Deleted");
-      } catch {
-        toast.error("Failed to delete");
+      const result = await deleteExpense(id);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+      setExpenses((prev) => prev.filter((e) => e.id !== id));
+      setCount((prev) => prev - 1);
+      toast.success("Deleted");
     });
   };
 
   const handleUpdate = (updated: ExpenseWithRelations) => {
     setExpenses((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+  };
+
+  const handleExportCSV = () => {
+    startTransition(async () => {
+      const csv = await exportExpensesCSV({
+        search: search || undefined,
+        categoryId: categoryFilter || undefined,
+        paymentMethodId: paymentFilter || undefined,
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `expenses-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV exported");
+    });
   };
 
   const clearFilters = () => {
@@ -457,6 +490,15 @@ export function HistoryList({
             className="rounded-xl pl-9"
           />
         </div>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={handleExportCSV}
+          disabled={isPending || expenses.length === 0}
+          className="border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:opacity-40"
+          title="Export CSV"
+        >
+          <Download className="h-4 w-4" />
+        </motion.button>
         <Sheet>
           <SheetTrigger className="border-input bg-background hover:bg-accent hover:text-accent-foreground relative inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors">
             <Filter className="h-4 w-4" />
@@ -631,7 +673,7 @@ export function HistoryList({
                         </motion.button>
                         <motion.button
                           whileTap={{ scale: 0.8 }}
-                          onClick={() => handleDelete(expense.id)}
+                          onClick={() => setDeletingExpense(expense)}
                           className="text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 rounded-lg p-1 transition-colors"
                           disabled={isPending}
                         >
@@ -666,6 +708,45 @@ export function HistoryList({
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deletingExpense} onOpenChange={(open) => !open && setDeletingExpense(null)}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Delete Expense</DialogTitle>
+            <DialogDescription>
+              {deletingExpense && (
+                <>
+                  Delete{" "}
+                  <strong>
+                    {currencySymbol}
+                    {Number(deletingExpense.amount).toLocaleString(locale)}
+                  </strong>{" "}
+                  — {deletingExpense.description || deletingExpense.category.name}? This cannot be
+                  undone.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeletingExpense(null)}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={isPending}
+              className="rounded-xl"
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

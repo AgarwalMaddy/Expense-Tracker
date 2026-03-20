@@ -15,6 +15,7 @@ import {
 } from "@/lib/validations";
 import { getCurrencyLocale } from "@/lib/constants";
 import { revalidatePath } from "next/cache";
+import { safeAction, type ActionResult } from "@/lib/action-result";
 
 async function getUserId(): Promise<string> {
   const { data: session } = await auth.getSession();
@@ -128,143 +129,161 @@ export async function getTags() {
 
 // --- Tags ---
 
-export async function createTag(name: unknown) {
-  const validated = createTagSchema.parse(name);
-  const userId = await getUserId();
-  const tag = await prisma.tag.create({
-    data: { userId, name: validated },
+export async function createTag(name: unknown): Promise<ActionResult> {
+  return safeAction(async () => {
+    const validated = createTagSchema.parse(name);
+    const userId = await getUserId();
+    const tag = await prisma.tag.create({
+      data: { userId, name: validated },
+    });
+    revalidatePath("/add");
+    return tag;
   });
-  revalidatePath("/add");
-  return tag;
 }
 
 // --- Payment Methods ---
 
-export async function createPaymentMethod(rawData: unknown) {
-  const data = createPaymentMethodSchema.parse(rawData);
-  const userId = await getUserId();
-  const pm = await prisma.paymentMethod.create({
-    data: {
-      userId,
-      name: data.name,
-      icon: data.icon,
-      color: data.color,
-      type: data.type,
-      bankName: data.bankName || null,
-      lastFourDigits: data.lastFourDigits || null,
-      creditLimit: data.creditLimit ?? null,
-      initialOutstanding: data.initialOutstanding ?? null,
-      billingCycleDay: data.billingCycleDay ?? null,
-    },
+export async function createPaymentMethod(rawData: unknown): Promise<ActionResult> {
+  return safeAction(async () => {
+    const data = createPaymentMethodSchema.parse(rawData);
+    const userId = await getUserId();
+    const pm = await prisma.paymentMethod.create({
+      data: {
+        userId,
+        name: data.name,
+        icon: data.icon,
+        color: data.color,
+        type: data.type,
+        bankName: data.bankName || null,
+        lastFourDigits: data.lastFourDigits || null,
+        creditLimit: data.creditLimit ?? null,
+        initialOutstanding: data.initialOutstanding ?? null,
+        billingCycleDay: data.billingCycleDay ?? null,
+      },
+    });
+    revalidateAll();
+    return pm;
   });
-  revalidateAll();
-  return pm;
 }
 
-export async function updatePaymentMethod(id: unknown, rawData: unknown) {
-  const validId = idSchema.parse(id);
-  const data = updatePaymentMethodSchema.parse(rawData);
-  const userId = await getUserId();
-  const pm = await prisma.paymentMethod.update({
-    where: { id: validId, userId },
-    data: {
-      ...(data.name !== undefined && { name: data.name }),
-      ...(data.icon !== undefined && { icon: data.icon }),
-      ...(data.color !== undefined && { color: data.color }),
-      ...(data.type !== undefined && { type: data.type }),
-      ...(data.bankName !== undefined && { bankName: data.bankName }),
-      ...(data.lastFourDigits !== undefined && { lastFourDigits: data.lastFourDigits }),
-      ...(data.creditLimit !== undefined && { creditLimit: data.creditLimit }),
-      ...(data.initialOutstanding !== undefined && { initialOutstanding: data.initialOutstanding }),
-      ...(data.billingCycleDay !== undefined && { billingCycleDay: data.billingCycleDay }),
-    },
+export async function updatePaymentMethod(id: unknown, rawData: unknown): Promise<ActionResult> {
+  return safeAction(async () => {
+    const validId = idSchema.parse(id);
+    const data = updatePaymentMethodSchema.parse(rawData);
+    const userId = await getUserId();
+    const pm = await prisma.paymentMethod.update({
+      where: { id: validId, userId },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.icon !== undefined && { icon: data.icon }),
+        ...(data.color !== undefined && { color: data.color }),
+        ...(data.type !== undefined && { type: data.type }),
+        ...(data.bankName !== undefined && { bankName: data.bankName }),
+        ...(data.lastFourDigits !== undefined && { lastFourDigits: data.lastFourDigits }),
+        ...(data.creditLimit !== undefined && { creditLimit: data.creditLimit }),
+        ...(data.initialOutstanding !== undefined && {
+          initialOutstanding: data.initialOutstanding,
+        }),
+        ...(data.billingCycleDay !== undefined && { billingCycleDay: data.billingCycleDay }),
+      },
+    });
+    revalidateAll();
+    return pm;
   });
-  revalidateAll();
-  return pm;
 }
 
-export async function deletePaymentMethod(id: unknown) {
-  const validId = idSchema.parse(id);
-  const userId = await getUserId();
+export async function deletePaymentMethod(id: unknown): Promise<ActionResult> {
+  return safeAction(async () => {
+    const validId = idSchema.parse(id);
+    const userId = await getUserId();
 
-  const [usageCount, settlementCount] = await Promise.all([
-    prisma.expense.count({ where: { userId, paymentMethodId: validId } }),
-    prisma.expense.count({ where: { userId, settlesPaymentMethodId: validId } }),
-  ]);
+    const [usageCount, settlementCount] = await Promise.all([
+      prisma.expense.count({ where: { userId, paymentMethodId: validId } }),
+      prisma.expense.count({ where: { userId, settlesPaymentMethodId: validId } }),
+    ]);
 
-  if (usageCount > 0 || settlementCount > 0) {
-    throw new Error(
-      `Cannot delete — ${usageCount + settlementCount} expense(s)/settlement(s) reference this method`
-    );
-  }
+    if (usageCount > 0 || settlementCount > 0) {
+      throw new Error(
+        `Cannot delete — ${usageCount + settlementCount} expense(s)/settlement(s) reference this method`
+      );
+    }
 
-  await prisma.paymentMethod.delete({ where: { id: validId, userId } });
-  revalidateAll();
+    await prisma.paymentMethod.delete({ where: { id: validId, userId } });
+    revalidateAll();
+    return null;
+  });
 }
 
 // --- Expenses ---
 
-export async function createExpense(rawData: unknown) {
-  const data = createExpenseSchema.parse(rawData);
-  const userId = await getUserId();
+export async function createExpense(rawData: unknown): Promise<ActionResult> {
+  return safeAction(async () => {
+    const data = createExpenseSchema.parse(rawData);
+    const userId = await getUserId();
 
-  const expense = await prisma.expense.create({
-    data: {
-      userId,
-      amount: data.amount,
-      type: data.type,
-      categoryId: data.categoryId,
-      paymentMethodId: data.paymentMethodId,
-      settlesPaymentMethodId: data.settlesPaymentMethodId || null,
-      description: data.description || null,
-      notes: data.notes || null,
-      expenseDate: new Date(data.expenseDate),
-      tags: data.tagIds?.length ? { create: data.tagIds.map((tagId) => ({ tagId })) } : undefined,
-    },
+    const expense = await prisma.expense.create({
+      data: {
+        userId,
+        amount: data.amount,
+        type: data.type,
+        categoryId: data.categoryId,
+        paymentMethodId: data.paymentMethodId,
+        settlesPaymentMethodId: data.settlesPaymentMethodId || null,
+        description: data.description || null,
+        notes: data.notes || null,
+        expenseDate: new Date(data.expenseDate),
+        tags: data.tagIds?.length ? { create: data.tagIds.map((tagId) => ({ tagId })) } : undefined,
+      },
+    });
+
+    revalidatePath("/");
+    revalidatePath("/history");
+    return expense;
   });
-
-  revalidatePath("/");
-  revalidatePath("/history");
-  return expense;
 }
 
-export async function updateExpense(id: unknown, rawData: unknown) {
-  const validId = idSchema.parse(id);
-  const data = updateExpenseSchema.parse(rawData);
-  const userId = await getUserId();
+export async function updateExpense(id: unknown, rawData: unknown): Promise<ActionResult> {
+  return safeAction(async () => {
+    const validId = idSchema.parse(id);
+    const data = updateExpenseSchema.parse(rawData);
+    const userId = await getUserId();
 
-  const tagUpdate =
-    data.tagIds !== undefined
-      ? {
-          deleteMany: {},
-          ...(data.tagIds.length > 0 ? { create: data.tagIds.map((tagId) => ({ tagId })) } : {}),
-        }
-      : undefined;
+    const tagUpdate =
+      data.tagIds !== undefined
+        ? {
+            deleteMany: {},
+            ...(data.tagIds.length > 0 ? { create: data.tagIds.map((tagId) => ({ tagId })) } : {}),
+          }
+        : undefined;
 
-  const expense = await prisma.expense.update({
-    where: { id: validId, userId },
-    data: {
-      amount: data.amount,
-      categoryId: data.categoryId,
-      paymentMethodId: data.paymentMethodId,
-      description: data.description || null,
-      notes: data.notes || null,
-      expenseDate: new Date(data.expenseDate),
-      tags: tagUpdate,
-    },
+    const expense = await prisma.expense.update({
+      where: { id: validId, userId },
+      data: {
+        amount: data.amount,
+        categoryId: data.categoryId,
+        paymentMethodId: data.paymentMethodId,
+        description: data.description || null,
+        notes: data.notes || null,
+        expenseDate: new Date(data.expenseDate),
+        tags: tagUpdate,
+      },
+    });
+
+    revalidatePath("/");
+    revalidatePath("/history");
+    return expense;
   });
-
-  revalidatePath("/");
-  revalidatePath("/history");
-  return expense;
 }
 
-export async function deleteExpense(id: unknown) {
-  const validId = idSchema.parse(id);
-  const userId = await getUserId();
-  await prisma.expense.delete({ where: { id: validId, userId } });
-  revalidatePath("/");
-  revalidatePath("/history");
+export async function deleteExpense(id: unknown): Promise<ActionResult> {
+  return safeAction(async () => {
+    const validId = idSchema.parse(id);
+    const userId = await getUserId();
+    await prisma.expense.delete({ where: { id: validId, userId } });
+    revalidatePath("/");
+    revalidatePath("/history");
+    return null;
+  });
 }
 
 export async function getExpenses(rawParams?: unknown) {
@@ -321,26 +340,28 @@ export async function getUserPreferences() {
   return prefs;
 }
 
-export async function updateUserPreferences(rawData: unknown) {
-  const data = updatePreferencesSchema.parse(rawData);
-  const userId = await getUserId();
+export async function updateUserPreferences(rawData: unknown): Promise<ActionResult> {
+  return safeAction(async () => {
+    const data = updatePreferencesSchema.parse(rawData);
+    const userId = await getUserId();
 
-  const updateData: Record<string, string> = {};
-  if (data.currency) {
-    updateData.currency = data.currency;
-    updateData.locale = getCurrencyLocale(data.currency);
-  }
-  if (data.timezone) updateData.timezone = data.timezone;
-  if (data.locale) updateData.locale = data.locale;
+    const updateData: Record<string, string> = {};
+    if (data.currency) {
+      updateData.currency = data.currency;
+      updateData.locale = getCurrencyLocale(data.currency);
+    }
+    if (data.timezone) updateData.timezone = data.timezone;
+    if (data.locale) updateData.locale = data.locale;
 
-  const prefs = await prisma.userPreference.upsert({
-    where: { userId },
-    update: updateData,
-    create: { userId, ...updateData },
+    const prefs = await prisma.userPreference.upsert({
+      where: { userId },
+      update: updateData,
+      create: { userId, ...updateData },
+    });
+
+    revalidateAll();
+    return prefs;
   });
-
-  revalidateAll();
-  return prefs;
 }
 
 // --- Dashboard ---
@@ -361,8 +382,6 @@ function getMonthBoundsForTimezone(tz: string): { startOfMonth: Date; endOfMonth
   const year = get("year");
   const month = get("month");
 
-  // Build "YYYY-MM-01T00:00:00" in the target timezone, then find its UTC equivalent
-  // by computing the offset at that specific instant (handles DST correctly).
   function tzDateToUTC(y: number, m: number, d: number): Date {
     const guess = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
     const localParts = new Intl.DateTimeFormat("en-US", {
@@ -502,4 +521,74 @@ export async function getCreditCardSummary() {
   );
 
   return summaries;
+}
+
+// --- CSV Export ---
+
+export async function exportExpensesCSV(rawParams?: unknown) {
+  const params = getExpensesSchema.parse(rawParams);
+  const userId = await getUserId();
+  const prefs = await getUserPreferences();
+
+  const where: Record<string, unknown> = { userId };
+  if (params?.startDate || params?.endDate) {
+    where.expenseDate = {
+      ...(params?.startDate ? { gte: new Date(params.startDate) } : {}),
+      ...(params?.endDate ? { lte: new Date(params.endDate) } : {}),
+    };
+  }
+  if (params?.categoryId) where.categoryId = params.categoryId;
+  if (params?.paymentMethodId) where.paymentMethodId = params.paymentMethodId;
+  if (params?.type) where.type = params.type;
+
+  const expenses = await prisma.expense.findMany({
+    where,
+    include: {
+      category: true,
+      paymentMethod: true,
+      settlesPaymentMethod: true,
+      tags: { include: { tag: true } },
+    },
+    orderBy: { expenseDate: "desc" },
+  });
+
+  const header = [
+    "Date",
+    "Type",
+    "Amount",
+    "Currency",
+    "Category",
+    "Payment Method",
+    "Settles Card",
+    "Description",
+    "Notes",
+    "Labels",
+  ].join(",");
+
+  const rows = expenses.map((e) => {
+    const date = new Date(e.expenseDate).toLocaleDateString("en-CA");
+    const labels = e.tags.map((t) => t.tag.name).join("; ");
+    const settles = e.settlesPaymentMethod?.name ?? "";
+    return [
+      date,
+      e.type,
+      Number(e.amount),
+      prefs.currency,
+      e.category.name,
+      e.paymentMethod.name,
+      settles,
+      csvEscape(e.description ?? ""),
+      csvEscape(e.notes ?? ""),
+      csvEscape(labels),
+    ].join(",");
+  });
+
+  return [header, ...rows].join("\n");
+}
+
+function csvEscape(value: string): string {
+  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
 }

@@ -71,46 +71,48 @@ export function AddExpenseForm({
     }
 
     startTransition(async () => {
-      try {
-        if (mode === "settlement") {
-          const billsCategory = categories.find((c) => c.name.toLowerCase() === "bills");
-          await createExpense({
-            amount: parseFloat(amount),
-            categoryId: billsCategory?.id || categories[0].id,
-            paymentMethodId,
-            settlesPaymentMethodId: settlesCardId,
-            type: "SETTLEMENT",
-            description: description || `CC Bill Payment`,
-            notes: notes || undefined,
-            expenseDate: date.toISOString(),
-          });
-        } else {
-          await createExpense({
-            amount: parseFloat(amount),
-            categoryId,
-            paymentMethodId,
-            description: description || undefined,
-            notes: notes || undefined,
-            expenseDate: date.toISOString(),
-            tagIds: selectedTags.length > 0 ? selectedTags : undefined,
-          });
-        }
-
-        if (navigator.vibrate) navigator.vibrate(50);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 1500);
-        toast.success(mode === "settlement" ? "Settlement recorded!" : "Expense added!");
-        setAmount("");
-        setCategoryId("");
-        setPaymentMethodId("");
-        setSettlesCardId("");
-        setDescription("");
-        setNotes("");
-        setSelectedTags([]);
-        router.refresh();
-      } catch {
-        toast.error("Failed to save");
+      let result;
+      if (mode === "settlement") {
+        const billsCategory = categories.find((c) => c.name.toLowerCase() === "bills");
+        result = await createExpense({
+          amount: parseFloat(amount),
+          categoryId: billsCategory?.id || categories[0].id,
+          paymentMethodId,
+          settlesPaymentMethodId: settlesCardId,
+          type: "SETTLEMENT",
+          description: description || `CC Bill Payment`,
+          notes: notes || undefined,
+          expenseDate: date.toISOString(),
+        });
+      } else {
+        result = await createExpense({
+          amount: parseFloat(amount),
+          categoryId,
+          paymentMethodId,
+          description: description || undefined,
+          notes: notes || undefined,
+          expenseDate: date.toISOString(),
+          tagIds: selectedTags.length > 0 ? selectedTags : undefined,
+        });
       }
+
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      if (navigator.vibrate) navigator.vibrate(50);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1500);
+      toast.success(mode === "settlement" ? "Settlement recorded!" : "Expense added!");
+      setAmount("");
+      setCategoryId("");
+      setPaymentMethodId("");
+      setSettlesCardId("");
+      setDescription("");
+      setNotes("");
+      setSelectedTags([]);
+      router.refresh();
     });
   };
 

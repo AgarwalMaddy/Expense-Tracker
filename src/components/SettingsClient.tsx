@@ -332,14 +332,14 @@ export function SettingsClient({ initialPaymentMethods, initialPreferences }: Se
     if (!value) return;
     setCurrency(value);
     startTransition(async () => {
-      try {
-        await updateUserPreferences({ currency: value });
-        toast.success(`Currency set to ${value}`);
-        router.refresh();
-      } catch {
-        toast.error("Failed to update currency");
+      const result = await updateUserPreferences({ currency: value });
+      if (!result.success) {
+        toast.error(result.error);
         setCurrency(initialPreferences.currency);
+        return;
       }
+      toast.success(`Currency set to ${value}`);
+      router.refresh();
     });
   };
 
@@ -347,75 +347,76 @@ export function SettingsClient({ initialPaymentMethods, initialPreferences }: Se
     if (!value) return;
     setTimezone(value);
     startTransition(async () => {
-      try {
-        await updateUserPreferences({ timezone: value });
-        toast.success("Timezone updated");
-        router.refresh();
-      } catch {
-        toast.error("Failed to update timezone");
+      const result = await updateUserPreferences({ timezone: value });
+      if (!result.success) {
+        toast.error(result.error);
         setTimezone(initialPreferences.timezone);
+        return;
       }
+      toast.success("Timezone updated");
+      router.refresh();
     });
   };
 
   const handleAddTag = () => {
     if (!tagName.trim()) return;
     startTransition(async () => {
-      try {
-        await createTag(tagName);
-        toast.success(`Label "${tagName}" created`);
-        setTagName("");
-      } catch {
-        toast.error("Failed to create label");
+      const result = await createTag(tagName);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+      toast.success(`Label "${tagName}" created`);
+      setTagName("");
     });
   };
 
   const handleAddPaymentMethod = (data: CreatePaymentMethodInput) => {
     startTransition(async () => {
-      try {
-        const pm = await createPaymentMethod(data);
-        setPaymentMethods((prev) => [...prev, pm]);
-        toast.success(`"${data.name}" added`);
-        router.refresh();
-      } catch {
-        toast.error("Failed to create payment method");
+      const result = await createPaymentMethod(data);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+      setPaymentMethods((prev) => [...prev, result.data as PaymentMethod]);
+      toast.success(`"${data.name}" added`);
+      router.refresh();
     });
   };
 
   const handleEditPaymentMethod = (data: CreatePaymentMethodInput) => {
     if (!editingPm) return;
     startTransition(async () => {
-      try {
-        const updated = await updatePaymentMethod(editingPm.id, {
-          ...data,
-          bankName: data.bankName ?? null,
-          lastFourDigits: data.lastFourDigits ?? null,
-          creditLimit: data.creditLimit ?? null,
-          initialOutstanding: data.initialOutstanding ?? null,
-          billingCycleDay: data.billingCycleDay ?? null,
-        });
-        setPaymentMethods((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-        toast.success(`"${data.name}" updated`);
-        setEditingPm(null);
-        router.refresh();
-      } catch {
-        toast.error("Failed to update");
+      const result = await updatePaymentMethod(editingPm.id, {
+        ...data,
+        bankName: data.bankName ?? null,
+        lastFourDigits: data.lastFourDigits ?? null,
+        creditLimit: data.creditLimit ?? null,
+        initialOutstanding: data.initialOutstanding ?? null,
+        billingCycleDay: data.billingCycleDay ?? null,
+      });
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+      const updated = result.data as PaymentMethod;
+      setPaymentMethods((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      toast.success(`"${data.name}" updated`);
+      setEditingPm(null);
+      router.refresh();
     });
   };
 
   const handleDeletePaymentMethod = (id: string, name: string) => {
     startTransition(async () => {
-      try {
-        await deletePaymentMethod(id);
-        setPaymentMethods((prev) => prev.filter((p) => p.id !== id));
-        toast.success(`"${name}" deleted`);
-        router.refresh();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to delete");
+      const result = await deletePaymentMethod(id);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+      setPaymentMethods((prev) => prev.filter((p) => p.id !== id));
+      toast.success(`"${name}" deleted`);
+      router.refresh();
     });
   };
 
