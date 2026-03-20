@@ -1,10 +1,29 @@
 "use client";
 
 import {
-  UtensilsCrossed, Car, ShoppingCart, ShoppingBag, HeartPulse,
-  FileText, Clapperboard, House, GraduationCap, Sparkles, Package,
-  Banknote, Smartphone, SmartphoneNfc, CreditCard, Wallet, Landmark,
-  Globe, Building2, HandCoins, PiggyBank, Receipt, QrCode,
+  UtensilsCrossed,
+  Car,
+  ShoppingCart,
+  ShoppingBag,
+  HeartPulse,
+  FileText,
+  Clapperboard,
+  House,
+  GraduationCap,
+  Sparkles,
+  Package,
+  Banknote,
+  Smartphone,
+  SmartphoneNfc,
+  CreditCard,
+  Wallet,
+  Landmark,
+  Globe,
+  Building2,
+  HandCoins,
+  PiggyBank,
+  Receipt,
+  QrCode,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";

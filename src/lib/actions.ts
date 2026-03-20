@@ -225,9 +225,7 @@ export async function createExpense(data: {
       description: data.description || null,
       notes: data.notes || null,
       expenseDate: new Date(data.expenseDate),
-      tags: data.tagIds?.length
-        ? { create: data.tagIds.map((tagId) => ({ tagId })) }
-        : undefined,
+      tags: data.tagIds?.length ? { create: data.tagIds.map((tagId) => ({ tagId })) } : undefined,
     },
   });
 
@@ -310,9 +308,7 @@ export async function updateExpense(
       description: data.description || null,
       notes: data.notes || null,
       expenseDate: new Date(data.expenseDate),
-      tags: data.tagIds?.length
-        ? { create: data.tagIds.map((tagId) => ({ tagId })) }
-        : undefined,
+      tags: data.tagIds?.length ? { create: data.tagIds.map((tagId) => ({ tagId })) } : undefined,
     },
   });
 
@@ -337,33 +333,36 @@ export async function getDashboardData() {
   const startOfMonth = new Date(Date.UTC(istYear, istMonth, 1) - 5.5 * 60 * 60 * 1000);
   const endOfMonth = new Date(Date.UTC(istYear, istMonth + 1, 1) - 5.5 * 60 * 60 * 1000 - 1);
 
-  const expenseFilter = { userId, type: "EXPENSE" as const, expenseDate: { gte: startOfMonth, lte: endOfMonth } };
+  const expenseFilter = {
+    userId,
+    type: "EXPENSE" as const,
+    expenseDate: { gte: startOfMonth, lte: endOfMonth },
+  };
 
-  const [monthlyExpenses, categoryBreakdown, paymentBreakdown, recentExpenses] =
-    await Promise.all([
-      prisma.expense.aggregate({
-        where: expenseFilter,
-        _sum: { amount: true },
-        _count: true,
-      }),
-      prisma.expense.groupBy({
-        by: ["categoryId"],
-        where: expenseFilter,
-        _sum: { amount: true },
-        _count: true,
-      }),
-      prisma.expense.groupBy({
-        by: ["paymentMethodId"],
-        where: expenseFilter,
-        _sum: { amount: true },
-      }),
-      prisma.expense.findMany({
-        where: { userId },
-        include: { category: true, paymentMethod: true, settlesPaymentMethod: true },
-        orderBy: { expenseDate: "desc" },
-        take: 5,
-      }),
-    ]);
+  const [monthlyExpenses, categoryBreakdown, paymentBreakdown, recentExpenses] = await Promise.all([
+    prisma.expense.aggregate({
+      where: expenseFilter,
+      _sum: { amount: true },
+      _count: true,
+    }),
+    prisma.expense.groupBy({
+      by: ["categoryId"],
+      where: expenseFilter,
+      _sum: { amount: true },
+      _count: true,
+    }),
+    prisma.expense.groupBy({
+      by: ["paymentMethodId"],
+      where: expenseFilter,
+      _sum: { amount: true },
+    }),
+    prisma.expense.findMany({
+      where: { userId },
+      include: { category: true, paymentMethod: true, settlesPaymentMethod: true },
+      orderBy: { expenseDate: "desc" },
+      take: 5,
+    }),
+  ]);
 
   const categories = await prisma.category.findMany({
     where: { userId, id: { in: categoryBreakdown.map((c) => c.categoryId) } },

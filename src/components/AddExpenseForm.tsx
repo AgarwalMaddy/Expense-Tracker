@@ -27,7 +27,12 @@ interface AddExpenseFormProps {
 
 type FormMode = "expense" | "settlement";
 
-export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods }: AddExpenseFormProps) {
+export function AddExpenseForm({
+  categories,
+  tags,
+  paymentMethods,
+  creditMethods,
+}: AddExpenseFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showSuccess, setShowSuccess] = useState(false);
@@ -67,9 +72,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
     startTransition(async () => {
       try {
         if (mode === "settlement") {
-          const billsCategory = categories.find(
-            (c) => c.name.toLowerCase() === "bills"
-          );
+          const billsCategory = categories.find((c) => c.name.toLowerCase() === "bills");
           await createExpense({
             amount: parseFloat(amount),
             categoryId: billsCategory?.id || categories[0].id,
@@ -125,7 +128,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
     >
       {/* Mode Toggle */}
       {creditMethods.length > 0 && (
-        <div className="flex rounded-2xl border border-border/50 bg-muted/30 p-1">
+        <div className="border-border/50 bg-muted/30 flex rounded-2xl border p-1">
           {(["expense", "settlement"] as const).map((m) => (
             <button
               key={m}
@@ -139,7 +142,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
               className={cn(
                 "flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
                 mode === m
-                  ? "bg-background shadow-sm text-foreground"
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -151,11 +154,11 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
 
       {/* Amount */}
       <div className="space-y-2">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {mode === "settlement" ? "Settlement Amount" : "Amount"}
         </Label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-semibold text-muted-foreground/60">
+          <span className="text-muted-foreground/60 absolute top-1/2 left-4 -translate-y-1/2 text-2xl font-semibold">
             {CURRENCY_SYMBOL}
           </span>
           <Input
@@ -164,7 +167,7 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
             placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="h-16 pl-11 text-3xl font-bold rounded-2xl border-2 border-border/50 focus:border-primary/50 transition-colors"
+            className="border-border/50 focus:border-primary/50 h-16 rounded-2xl border-2 pl-11 text-3xl font-bold transition-colors"
           />
         </div>
       </div>
@@ -173,10 +176,10 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
         <>
           {/* Which card are you settling? */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Settling Card
               {selectedCard && (
-                <span className="ml-1.5 normal-case tracking-normal text-foreground">
+                <span className="text-foreground ml-1.5 tracking-normal normal-case">
                   &mdash; {selectedCard.name}
                 </span>
               )}
@@ -191,28 +194,34 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
                     onClick={() => setSettlesCardId((prev) => (prev === card.id ? "" : card.id))}
                     whileTap={{ scale: 0.93 }}
                     className={cn(
-                      "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all overflow-hidden min-w-0",
+                      "relative flex min-w-0 flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 p-3 text-xs transition-all",
                       isSelected
-                        ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-md shadow-primary/10"
-                        : "border-transparent bg-muted/40 hover:bg-muted/70"
+                        ? "border-primary bg-primary/10 ring-primary/20 shadow-primary/10 shadow-md ring-2"
+                        : "bg-muted/40 hover:bg-muted/70 border-transparent"
                     )}
                   >
                     {isSelected && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
+                        className="bg-primary absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full"
                       >
-                        <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
+                        <Check className="text-primary-foreground h-3 w-3" strokeWidth={3} />
                       </motion.div>
                     )}
                     <CategoryIcon name={card.icon} color={card.color} size="sm" glow={isSelected} />
-                    <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
+                    <span
+                      className={cn(
+                        "max-w-full truncate font-medium",
+                        isSelected && "text-primary font-semibold"
+                      )}
+                    >
                       {card.name}
                     </span>
                     {card.bankName && (
-                      <span className="text-[10px] text-muted-foreground truncate max-w-full">
-                        {card.bankName}{card.lastFourDigits && ` ••${card.lastFourDigits}`}
+                      <span className="text-muted-foreground max-w-full truncate text-[10px]">
+                        {card.bankName}
+                        {card.lastFourDigits && ` ••${card.lastFourDigits}`}
                       </span>
                     )}
                   </motion.button>
@@ -223,10 +232,10 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
 
           {/* Paid via (non-credit methods only) */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Paid Via
               {selectedPm && (
-                <span className="ml-1.5 normal-case tracking-normal text-foreground">
+                <span className="text-foreground ml-1.5 tracking-normal normal-case">
                   &mdash; {selectedPm.name}
                 </span>
               )}
@@ -241,23 +250,28 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
                     onClick={() => setPaymentMethodId((prev) => (prev === pm.id ? "" : pm.id))}
                     whileTap={{ scale: 0.93 }}
                     className={cn(
-                      "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all overflow-hidden min-w-0",
+                      "relative flex min-w-0 flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 p-3 text-xs transition-all",
                       isSelected
-                        ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-md shadow-primary/10"
-                        : "border-transparent bg-muted/40 hover:bg-muted/70"
+                        ? "border-primary bg-primary/10 ring-primary/20 shadow-primary/10 shadow-md ring-2"
+                        : "bg-muted/40 hover:bg-muted/70 border-transparent"
                     )}
                   >
                     {isSelected && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
+                        className="bg-primary absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full"
                       >
-                        <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
+                        <Check className="text-primary-foreground h-3 w-3" strokeWidth={3} />
                       </motion.div>
                     )}
                     <CategoryIcon name={pm.icon} color={pm.color} size="sm" glow={isSelected} />
-                    <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
+                    <span
+                      className={cn(
+                        "max-w-full truncate font-medium",
+                        isSelected && "text-primary font-semibold"
+                      )}
+                    >
                       {pm.name}
                     </span>
                   </motion.button>
@@ -271,13 +285,13 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-center gap-3 rounded-2xl border border-border/50 bg-muted/20 p-3"
+              className="border-border/50 bg-muted/20 flex items-center justify-center gap-3 rounded-2xl border p-3"
             >
               <div className="flex items-center gap-1.5">
                 <CategoryIcon name={selectedPm!.icon} color={selectedPm!.color} size="sm" />
                 <span className="text-xs font-medium">{selectedPm!.name}</span>
               </div>
-              <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+              <ArrowLeftRight className="text-muted-foreground h-4 w-4" />
               <div className="flex items-center gap-1.5">
                 <CategoryIcon name={selectedCard!.icon} color={selectedCard!.color} size="sm" />
                 <span className="text-xs font-medium">{selectedCard!.name}</span>
@@ -289,10 +303,10 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
         <>
           {/* Category Grid */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Category
               {selectedCat && (
-                <span className="ml-1.5 normal-case tracking-normal text-foreground">
+                <span className="text-foreground ml-1.5 tracking-normal normal-case">
                   &mdash; {selectedCat.name}
                 </span>
               )}
@@ -310,23 +324,28 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
                     transition={{ duration: 0.3, delay: i * 0.03 }}
                     whileTap={{ scale: 0.93 }}
                     className={cn(
-                      "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all overflow-hidden min-w-0",
+                      "relative flex min-w-0 flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 p-3 text-xs transition-all",
                       isSelected
-                        ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-md shadow-primary/10"
-                        : "border-transparent bg-muted/40 hover:bg-muted/70"
+                        ? "border-primary bg-primary/10 ring-primary/20 shadow-primary/10 shadow-md ring-2"
+                        : "bg-muted/40 hover:bg-muted/70 border-transparent"
                     )}
                   >
                     {isSelected && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
+                        className="bg-primary absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full"
                       >
-                        <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
+                        <Check className="text-primary-foreground h-3 w-3" strokeWidth={3} />
                       </motion.div>
                     )}
                     <CategoryIcon name={cat.icon} color={cat.color} size="sm" glow={isSelected} />
-                    <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
+                    <span
+                      className={cn(
+                        "max-w-full truncate font-medium",
+                        isSelected && "text-primary font-semibold"
+                      )}
+                    >
                       {cat.name}
                     </span>
                   </motion.button>
@@ -337,10 +356,10 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
 
           {/* Payment Method Grid */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Payment
               {selectedPm && (
-                <span className="ml-1.5 normal-case tracking-normal text-foreground">
+                <span className="text-foreground ml-1.5 tracking-normal normal-case">
                   &mdash; {selectedPm.name}
                 </span>
               )}
@@ -355,24 +374,29 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
                     onClick={() => setPaymentMethodId((prev) => (prev === pm.id ? "" : pm.id))}
                     whileTap={{ scale: 0.93 }}
                     className={cn(
-                      "relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-xs transition-all overflow-hidden min-w-0",
+                      "relative flex min-w-0 flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 p-3 text-xs transition-all",
                       isSelected
-                        ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-md shadow-primary/10"
-                        : "border-transparent bg-muted/40 hover:bg-muted/70"
+                        ? "border-primary bg-primary/10 ring-primary/20 shadow-primary/10 shadow-md ring-2"
+                        : "bg-muted/40 hover:bg-muted/70 border-transparent"
                     )}
                   >
                     {isSelected && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary"
+                        className="bg-primary absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full"
                         transition={{ type: "spring", stiffness: 500, damping: 30 }}
                       >
-                        <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
+                        <Check className="text-primary-foreground h-3 w-3" strokeWidth={3} />
                       </motion.div>
                     )}
                     <CategoryIcon name={pm.icon} color={pm.color} size="sm" glow={isSelected} />
-                    <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
+                    <span
+                      className={cn(
+                        "max-w-full truncate font-medium",
+                        isSelected && "text-primary font-semibold"
+                      )}
+                    >
                       {pm.name}
                     </span>
                   </motion.button>
@@ -386,13 +410,15 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
       <div className="grid gap-4 md:grid-cols-2">
         {/* Date */}
         <div className="space-y-2">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</Label>
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Date
+          </Label>
           <Popover>
-            <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-xl border border-input bg-background px-3 py-2 text-left text-sm font-normal ring-offset-background hover:bg-accent hover:text-accent-foreground transition-colors">
-              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+            <PopoverTrigger className="border-input bg-background ring-offset-background hover:bg-accent hover:text-accent-foreground flex h-10 w-full items-center justify-start rounded-xl border px-3 py-2 text-left text-sm font-normal transition-colors">
+              <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
               {format(date, "PPP")}
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+            <PopoverContent className="w-auto rounded-xl p-0" align="start">
               <Calendar
                 mode="single"
                 selected={date}
@@ -405,7 +431,9 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
 
         {/* Description */}
         <div className="space-y-2">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</Label>
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Description
+          </Label>
           <Input
             placeholder={mode === "settlement" ? "e.g. March CC bill" : "What was this for?"}
             value={description}
@@ -417,7 +445,9 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
 
       {/* Notes */}
       <div className="space-y-2">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes (optional)</Label>
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Notes (optional)
+        </Label>
         <Input
           placeholder="Any additional notes..."
           value={notes}
@@ -429,7 +459,9 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
       {/* Labels (expense mode only) */}
       {mode === "expense" && tags.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Labels</Label>
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Labels
+          </Label>
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <motion.button
@@ -438,15 +470,13 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
                 whileTap={{ scale: 0.9 }}
                 onClick={() =>
                   setSelectedTags((prev) =>
-                    prev.includes(tag.id)
-                      ? prev.filter((t) => t !== tag.id)
-                      : [...prev, tag.id]
+                    prev.includes(tag.id) ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
                   )
                 }
                 className={cn(
                   "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all",
                   selectedTags.includes(tag.id)
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                    ? "border-primary bg-primary text-primary-foreground shadow-primary/20 shadow-sm"
                     : "border-border/60 hover:bg-muted/70 hover:border-border"
                 )}
               >
@@ -464,9 +494,11 @@ export function AddExpenseForm({ categories, tags, paymentMethods, creditMethods
           disabled={
             isPending ||
             !amount ||
-            (mode === "expense" ? !categoryId || !paymentMethodId : !settlesCardId || !paymentMethodId)
+            (mode === "expense"
+              ? !categoryId || !paymentMethodId
+              : !settlesCardId || !paymentMethodId)
           }
-          className="relative h-14 w-full rounded-2xl text-base font-semibold gradient-primary hover:opacity-90 transition-opacity md:w-auto md:px-16"
+          className="gradient-primary relative h-14 w-full rounded-2xl text-base font-semibold transition-opacity hover:opacity-90 md:w-auto md:px-16"
           size="lg"
         >
           <AnimatePresence mode="wait">

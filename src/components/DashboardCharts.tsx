@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { CURRENCY_SYMBOL } from "@/lib/constants";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { motion } from "framer-motion";
@@ -36,7 +30,7 @@ const tooltipStyle = {
 export function CategoryPieChart({ data }: { data: CategoryData[] }) {
   if (data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
         No expenses this month
       </div>
     );
@@ -82,7 +76,8 @@ export function CategoryPieChart({ data }: { data: CategoryData[] }) {
               <CategoryIcon name={entry.category.icon} color={entry.category.color} size="sm" />
               <span className="flex-1 truncate font-medium">{entry.category.name}</span>
               <span className="font-semibold tabular-nums">
-                {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}
+                {CURRENCY_SYMBOL}
+                {entry.total.toLocaleString("en-IN")}
               </span>
             </motion.div>
           ))}
@@ -96,7 +91,7 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
 
   if (total === 0) {
     return (
-      <div className="flex h-20 items-center justify-center text-sm text-muted-foreground">
+      <div className="text-muted-foreground flex h-20 items-center justify-center text-sm">
         No data
       </div>
     );
@@ -119,7 +114,7 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
               className="space-y-2"
             >
               <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 min-w-0">
+                <span className="flex min-w-0 items-center gap-2">
                   <div
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                     style={{ backgroundColor: `${pm.color}15` }}
@@ -128,16 +123,21 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
                   </div>
                   <span className="truncate font-medium">{pm.name}</span>
                 </span>
-                <span className="shrink-0 ml-2 font-semibold tabular-nums">
-                  {CURRENCY_SYMBOL}{entry.total.toLocaleString("en-IN")}
-                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">({pct}%)</span>
+                <span className="ml-2 shrink-0 font-semibold tabular-nums">
+                  {CURRENCY_SYMBOL}
+                  {entry.total.toLocaleString("en-IN")}
+                  <span className="text-muted-foreground ml-1.5 text-xs font-normal">({pct}%)</span>
                 </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted/60">
+              <div className="bg-muted/60 h-2 overflow-hidden rounded-full">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${pct}%` }}
-                  transition={{ duration: 0.8, delay: 0.2 + i * 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
+                  transition={{
+                    duration: 0.8,
+                    delay: 0.2 + i * 0.1,
+                    ease: [0.21, 0.47, 0.32, 0.98],
+                  }}
                   className="h-full rounded-full"
                   style={{ backgroundColor: pm.color }}
                 />

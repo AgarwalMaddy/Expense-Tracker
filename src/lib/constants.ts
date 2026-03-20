@@ -36,9 +36,20 @@ export const AVAILABLE_ICONS = [
 ] as const;
 
 export const AVAILABLE_COLORS = [
-  "#22c55e", "#8b5cf6", "#a855f7", "#3b82f6", "#06b6d4",
-  "#f97316", "#ef4444", "#ec4899", "#eab308", "#14b8a6",
-  "#6366f1", "#f43f5e", "#6b7280", "#84cc16",
+  "#22c55e",
+  "#8b5cf6",
+  "#a855f7",
+  "#3b82f6",
+  "#06b6d4",
+  "#f97316",
+  "#ef4444",
+  "#ec4899",
+  "#eab308",
+  "#14b8a6",
+  "#6366f1",
+  "#f43f5e",
+  "#6b7280",
+  "#84cc16",
 ] as const;
 
 export const CURRENCY_SYMBOL = "₹";

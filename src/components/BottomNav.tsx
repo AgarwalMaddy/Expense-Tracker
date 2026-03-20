@@ -19,8 +19,8 @@ export function BottomNav() {
   return (
     <>
       {/* Mobile: floating bottom bar */}
-      <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
-        <div className="mx-auto flex h-16 max-w-md items-center justify-around rounded-2xl glass-strong shadow-lg shadow-black/5">
+      <nav className="fixed right-4 bottom-4 left-4 z-50 md:hidden">
+        <div className="glass-strong mx-auto flex h-16 max-w-md items-center justify-around rounded-2xl shadow-lg shadow-black/5">
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href;
             return (
@@ -29,9 +29,7 @@ export function BottomNav() {
                 href={href}
                 className={cn(
                   "relative flex flex-col items-center gap-1 px-4 py-2 text-[11px] font-medium transition-colors",
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <div className="relative">
@@ -39,7 +37,7 @@ export function BottomNav() {
                   {isActive && (
                     <motion.div
                       layoutId="nav-indicator-mobile"
-                      className="absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary"
+                      className="bg-primary absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full"
                       transition={{ type: "spring", stiffness: 500, damping: 35 }}
                     />
                   )}
@@ -52,8 +50,8 @@ export function BottomNav() {
       </nav>
 
       {/* Desktop: side bar */}
-      <nav className="fixed left-0 top-14 z-40 hidden h-[calc(100vh-3.5rem)] w-60 border-r border-border/50 bg-background/50 backdrop-blur-xl p-5 md:block">
-        <div className="space-y-1 mt-2">
+      <nav className="border-border/50 bg-background/50 fixed top-14 left-0 z-40 hidden h-[calc(100vh-3.5rem)] w-60 border-r p-5 backdrop-blur-xl md:block">
+        <div className="mt-2 space-y-1">
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href;
             return (
@@ -62,15 +60,13 @@ export function BottomNav() {
                 href={href}
                 className={cn(
                   "group relative flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-all",
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator-desktop"
-                    className="absolute inset-0 rounded-xl bg-primary/8 border border-primary/15"
+                    className="bg-primary/8 border-primary/15 absolute inset-0 rounded-xl border"
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}

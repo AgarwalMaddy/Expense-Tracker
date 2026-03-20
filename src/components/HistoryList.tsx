@@ -2,7 +2,18 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { format, isToday, isYesterday } from "date-fns";
-import { Trash2, Search, Filter, X, Pencil, CalendarIcon, Check, Loader2, ArrowUpDown, ArrowLeftRight } from "lucide-react";
+import {
+  Trash2,
+  Search,
+  Filter,
+  X,
+  Pencil,
+  CalendarIcon,
+  Check,
+  Loader2,
+  ArrowUpDown,
+  ArrowLeftRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -24,13 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import type {
-  Category,
-  Expense,
-  ExpenseTag,
-  Tag,
-  PaymentMethod,
-} from "@/generated/prisma/client";
+import type { Category, Expense, ExpenseTag, Tag, PaymentMethod } from "@/generated/prisma/client";
 
 type ExpenseWithRelations = Expense & {
   category: Category;
@@ -69,9 +74,7 @@ function EditExpenseSheet({
   const [description, setDescription] = useState(expense.description || "");
   const [notes, setNotes] = useState(expense.notes || "");
   const [date, setDate] = useState<Date>(new Date(expense.expenseDate));
-  const [selectedTags, setSelectedTags] = useState<string[]>(
-    expense.tags.map((et) => et.tagId)
-  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(expense.tags.map((et) => et.tagId));
 
   const handleSave = () => {
     if (!amount || !categoryId || !paymentMethodId) {
@@ -119,12 +122,14 @@ function EditExpenseSheet({
   };
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 mt-4 max-h-[70vh] overflow-y-auto pb-4">
+    <div className="mx-auto mt-4 max-h-[70vh] max-w-lg space-y-4 overflow-y-auto pb-4">
       {/* Amount */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</Label>
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Amount
+        </Label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground/60">
+          <span className="text-muted-foreground/60 absolute top-1/2 left-3 -translate-y-1/2 text-lg font-semibold">
             {CURRENCY_SYMBOL}
           </span>
           <Input
@@ -132,14 +137,16 @@ function EditExpenseSheet({
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="h-12 pl-8 text-xl font-bold rounded-xl"
+            className="h-12 rounded-xl pl-8 text-xl font-bold"
           />
         </div>
       </div>
 
       {/* Category */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Category
+        </Label>
         <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
           {categories.map((cat) => {
             const isSelected = categoryId === cat.id;
@@ -149,19 +156,24 @@ function EditExpenseSheet({
                 type="button"
                 onClick={() => setCategoryId(cat.id)}
                 className={cn(
-                  "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all overflow-hidden min-w-0",
+                  "relative flex min-w-0 flex-col items-center gap-1.5 overflow-hidden rounded-xl border-2 p-2 text-[10px] transition-all",
                   isSelected
-                    ? "border-primary bg-primary/10 ring-1 ring-primary/20"
-                    : "border-transparent bg-muted/40"
+                    ? "border-primary bg-primary/10 ring-primary/20 ring-1"
+                    : "bg-muted/40 border-transparent"
                 )}
               >
                 {isSelected && (
-                  <div className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
-                    <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
+                  <div className="bg-primary absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full">
+                    <Check className="text-primary-foreground h-2.5 w-2.5" strokeWidth={3} />
                   </div>
                 )}
                 <CategoryIcon name={cat.icon} color={cat.color} size="sm" />
-                <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
+                <span
+                  className={cn(
+                    "max-w-full truncate font-medium",
+                    isSelected && "text-primary font-semibold"
+                  )}
+                >
                   {cat.name}
                 </span>
               </button>
@@ -172,7 +184,9 @@ function EditExpenseSheet({
 
       {/* Payment */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</Label>
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Payment
+        </Label>
         <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
           {paymentMethods.map((pm) => {
             const isSelected = paymentMethodId === pm.id;
@@ -182,19 +196,24 @@ function EditExpenseSheet({
                 type="button"
                 onClick={() => setPaymentMethodId(pm.id)}
                 className={cn(
-                  "relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 text-[10px] transition-all overflow-hidden min-w-0",
+                  "relative flex min-w-0 flex-col items-center gap-1.5 overflow-hidden rounded-xl border-2 p-2 text-[10px] transition-all",
                   isSelected
-                    ? "border-primary bg-primary/10 ring-1 ring-primary/20"
-                    : "border-transparent bg-muted/40"
+                    ? "border-primary bg-primary/10 ring-primary/20 ring-1"
+                    : "bg-muted/40 border-transparent"
                 )}
               >
                 {isSelected && (
-                  <div className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
-                    <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
+                  <div className="bg-primary absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full">
+                    <Check className="text-primary-foreground h-2.5 w-2.5" strokeWidth={3} />
                   </div>
                 )}
                 <CategoryIcon name={pm.icon} color={pm.color} size="sm" />
-                <span className={cn("max-w-full truncate font-medium", isSelected && "text-primary font-semibold")}>
+                <span
+                  className={cn(
+                    "max-w-full truncate font-medium",
+                    isSelected && "text-primary font-semibold"
+                  )}
+                >
                   {pm.name}
                 </span>
               </button>
@@ -206,19 +225,28 @@ function EditExpenseSheet({
       {/* Date + Description */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</Label>
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Date
+          </Label>
           <Popover>
-            <PopoverTrigger className="flex h-10 w-full items-center justify-start rounded-xl border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors">
-              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+            <PopoverTrigger className="border-input bg-background hover:bg-accent flex h-10 w-full items-center justify-start rounded-xl border px-3 py-2 text-left text-sm transition-colors">
+              <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
               {format(date, "PPP")}
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-xl" align="start">
-              <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
+            <PopoverContent className="w-auto rounded-xl p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(d) => d && setDate(d)}
+                initialFocus
+              />
             </PopoverContent>
           </Popover>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</Label>
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Description
+          </Label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -230,7 +258,9 @@ function EditExpenseSheet({
 
       {/* Notes */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</Label>
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Notes
+        </Label>
         <Input
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -242,7 +272,9 @@ function EditExpenseSheet({
       {/* Labels */}
       {tags.length > 0 && (
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Labels</Label>
+          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Labels
+          </Label>
           <div className="flex flex-wrap gap-1.5">
             {tags.map((tag) => (
               <button
@@ -250,9 +282,7 @@ function EditExpenseSheet({
                 type="button"
                 onClick={() =>
                   setSelectedTags((prev) =>
-                    prev.includes(tag.id)
-                      ? prev.filter((t) => t !== tag.id)
-                      : [...prev, tag.id]
+                    prev.includes(tag.id) ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
                   )
                 }
                 className={cn(
@@ -273,7 +303,7 @@ function EditExpenseSheet({
       <Button
         onClick={handleSave}
         disabled={isPending || !amount || !categoryId || !paymentMethodId}
-        className="h-12 w-full rounded-xl gradient-primary hover:opacity-90 transition-opacity font-semibold"
+        className="gradient-primary h-12 w-full rounded-xl font-semibold transition-opacity hover:opacity-90"
       >
         {isPending ? (
           <span className="flex items-center gap-2">
@@ -316,10 +346,14 @@ export function HistoryList({
     const sorted = [...expenses];
     switch (sortBy) {
       case "newest":
-        sorted.sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime());
+        sorted.sort(
+          (a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime()
+        );
         break;
       case "oldest":
-        sorted.sort((a, b) => new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime());
+        sorted.sort(
+          (a, b) => new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime()
+        );
         break;
       case "highest":
         sorted.sort((a, b) => Number(b.amount) - Number(a.amount));
@@ -412,20 +446,20 @@ export function HistoryList({
       {/* Search & Filter Bar */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Search expenses..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleFilter()}
-            className="pl-9 rounded-xl"
+            className="rounded-xl pl-9"
           />
         </div>
         <Sheet>
-          <SheetTrigger className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
+          <SheetTrigger className="border-input bg-background hover:bg-accent hover:text-accent-foreground relative inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors">
             <Filter className="h-4 w-4" />
             {hasFilters && (
-              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
+              <span className="bg-primary ring-background absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full ring-2" />
             )}
           </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-3xl">
@@ -460,11 +494,20 @@ export function HistoryList({
               </Select>
 
               <div className="flex gap-2">
-                <Button onClick={handleFilter} className="flex-1 rounded-xl gradient-primary hover:opacity-90 transition-opacity" disabled={isPending}>
+                <Button
+                  onClick={handleFilter}
+                  className="gradient-primary flex-1 rounded-xl transition-opacity hover:opacity-90"
+                  disabled={isPending}
+                >
                   Apply Filters
                 </Button>
                 {hasFilters && (
-                  <Button variant="outline" onClick={clearFilters} disabled={isPending} className="rounded-xl">
+                  <Button
+                    variant="outline"
+                    onClick={clearFilters}
+                    disabled={isPending}
+                    className="rounded-xl"
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 )}
@@ -476,11 +519,11 @@ export function HistoryList({
 
       {/* Count + Sort */}
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {count} expense{count !== 1 ? "s" : ""}
         </p>
         <Select value={sortBy} onValueChange={(v) => setSortBy((v as SortOption) ?? "newest")}>
-          <SelectTrigger className="h-8 w-auto gap-1.5 rounded-lg border-border/50 bg-muted/40 px-2.5 text-xs font-medium">
+          <SelectTrigger className="border-border/50 bg-muted/40 h-8 w-auto gap-1.5 rounded-lg px-2.5 text-xs font-medium">
             <ArrowUpDown className="h-3 w-3" />
             <SelectValue />
           </SelectTrigger>
@@ -498,7 +541,7 @@ export function HistoryList({
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="py-16 text-center text-sm text-muted-foreground"
+          className="text-muted-foreground py-16 text-center text-sm"
         >
           No expenses found
         </motion.p>
@@ -507,11 +550,12 @@ export function HistoryList({
           {groupedByDate.map((group) => (
             <div key={group.date} className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   {formatDateHeading(group.date)}
                 </h3>
-                <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-                  {CURRENCY_SYMBOL}{group.dayTotal.toLocaleString("en-IN")}
+                <span className="text-muted-foreground text-xs font-semibold tabular-nums">
+                  {CURRENCY_SYMBOL}
+                  {group.dayTotal.toLocaleString("en-IN")}
                 </span>
               </div>
               <AnimatePresence mode="popLayout">
@@ -524,7 +568,7 @@ export function HistoryList({
                     exit={{ opacity: 0, x: -60, transition: { duration: 0.2 } }}
                     transition={{ duration: 0.35, delay: i * 0.03 }}
                     className={cn(
-                      "flex items-center gap-3 rounded-2xl border border-border/50 bg-card p-3.5 transition-all hover:shadow-sm hover:border-border",
+                      "border-border/50 bg-card hover:border-border flex items-center gap-3 rounded-2xl border p-3.5 transition-all hover:shadow-sm",
                       isPending && "opacity-50"
                     )}
                   >
@@ -546,19 +590,23 @@ export function HistoryList({
                           {expense.description || expense.category.name}
                         </p>
                         {expense.type === "SETTLEMENT" && (
-                          <span className="shrink-0 text-[9px] font-bold text-emerald-600 bg-emerald-500/10 rounded-full px-1.5 py-0.5">
+                          <span className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-600">
                             SETTLEMENT
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {expense.paymentMethod.name}
                         {expense.settlesPaymentMethod && ` → ${expense.settlesPaymentMethod.name}`}
                       </span>
                       {expense.tags.length > 0 && (
                         <div className="mt-1.5 flex gap-1">
                           {expense.tags.map((et) => (
-                            <Badge key={et.tagId} variant="secondary" className="text-[10px] px-2 py-0 rounded-full">
+                            <Badge
+                              key={et.tagId}
+                              variant="secondary"
+                              className="rounded-full px-2 py-0 text-[10px]"
+                            >
                               {et.tag.name}
                             </Badge>
                           ))}
@@ -567,13 +615,14 @@ export function HistoryList({
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
                       <p className="text-sm font-semibold tabular-nums">
-                        {CURRENCY_SYMBOL}{Number(expense.amount).toLocaleString("en-IN")}
+                        {CURRENCY_SYMBOL}
+                        {Number(expense.amount).toLocaleString("en-IN")}
                       </p>
                       <div className="flex items-center gap-1">
                         <motion.button
                           whileTap={{ scale: 0.8 }}
                           onClick={() => setEditingExpense(expense)}
-                          className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="text-muted-foreground/50 hover:text-primary hover:bg-primary/10 rounded-lg p-1 transition-colors"
                           disabled={isPending}
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -581,7 +630,7 @@ export function HistoryList({
                         <motion.button
                           whileTap={{ scale: 0.8 }}
                           onClick={() => handleDelete(expense.id)}
-                          className="rounded-lg p-1 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          className="text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 rounded-lg p-1 transition-colors"
                           disabled={isPending}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -598,7 +647,7 @@ export function HistoryList({
 
       {/* Edit Sheet */}
       <Sheet open={!!editingExpense} onOpenChange={(open) => !open && setEditingExpense(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh]">
+        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl">
           <SheetHeader>
             <SheetTitle className="font-display">Edit Expense</SheetTitle>
           </SheetHeader>

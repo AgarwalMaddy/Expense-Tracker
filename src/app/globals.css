@@ -126,16 +126,16 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-sans scroll-smooth;
+    @apply scroll-smooth font-sans;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-background/70 backdrop-blur-xl border border-border/50;
+    @apply bg-background/70 border-border/50 border backdrop-blur-xl;
   }
   .glass-strong {
-    @apply bg-background/85 backdrop-blur-2xl border border-border/60;
+    @apply bg-background/85 border-border/60 border backdrop-blur-2xl;
   }
   .gradient-primary {
     background: linear-gradient(135deg, oklch(0.488 0.243 264), oklch(0.623 0.214 259));
@@ -155,34 +155,49 @@
     background-clip: text;
   }
   .shimmer {
-    background: linear-gradient(
-      110deg,
-      transparent 25%,
-      oklch(1 0 0 / 0.06) 37%,
-      transparent 63%
-    );
+    background: linear-gradient(110deg, transparent 25%, oklch(1 0 0 / 0.06) 37%, transparent 63%);
     background-size: 200% 100%;
     animation: shimmer 2s ease-in-out infinite;
   }
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 @keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }

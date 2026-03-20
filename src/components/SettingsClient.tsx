@@ -3,11 +3,27 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, User, Shield, ChevronRight, Tag, CreditCard, Check, Trash2, Loader2, Pencil } from "lucide-react";
+import {
+  Plus,
+  User,
+  Shield,
+  ChevronRight,
+  Tag,
+  CreditCard,
+  Check,
+  Trash2,
+  Loader2,
+  Pencil,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AVAILABLE_ICONS, AVAILABLE_COLORS, CURRENCY_SYMBOL } from "@/lib/constants";
-import { createTag, createPaymentMethod, deletePaymentMethod, updatePaymentMethod } from "@/lib/actions";
+import {
+  createTag,
+  createPaymentMethod,
+  deletePaymentMethod,
+  updatePaymentMethod,
+} from "@/lib/actions";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,9 +64,15 @@ function PaymentMethodForm({
   const [type, setType] = useState<"SIMPLE" | "CREDIT">(initial?.type || "SIMPLE");
   const [bankName, setBankName] = useState(initial?.bankName || "");
   const [lastFour, setLastFour] = useState(initial?.lastFourDigits || "");
-  const [creditLimit, setCreditLimit] = useState(initial?.creditLimit ? String(Number(initial.creditLimit)) : "");
-  const [initialOutstanding, setInitialOutstanding] = useState(initial?.initialOutstanding ? String(Number(initial.initialOutstanding)) : "");
-  const [billingDay, setBillingDay] = useState(initial?.billingCycleDay ? String(initial.billingCycleDay) : "");
+  const [creditLimit, setCreditLimit] = useState(
+    initial?.creditLimit ? String(Number(initial.creditLimit)) : ""
+  );
+  const [initialOutstanding, setInitialOutstanding] = useState(
+    initial?.initialOutstanding ? String(Number(initial.initialOutstanding)) : ""
+  );
+  const [billingDay, setBillingDay] = useState(
+    initial?.billingCycleDay ? String(initial.billingCycleDay) : ""
+  );
 
   const handleSubmit = () => {
     if (!name.trim()) return;
@@ -79,7 +101,9 @@ function PaymentMethodForm({
 
       {/* Type toggle */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</Label>
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Type
+        </Label>
         <div className="flex gap-2">
           {(["SIMPLE", "CREDIT"] as const).map((t) => (
             <button
@@ -90,7 +114,7 @@ function PaymentMethodForm({
                 "flex-1 rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all",
                 type === t
                   ? "border-primary bg-primary/10 text-primary"
-                  : "border-transparent bg-muted/40 hover:bg-muted/70"
+                  : "bg-muted/40 hover:bg-muted/70 border-transparent"
               )}
             >
               {t === "SIMPLE" ? "Simple (Cash/UPI/etc)" : "Credit Card"}
@@ -110,7 +134,9 @@ function PaymentMethodForm({
           >
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bank Name</Label>
+                <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                  Bank Name
+                </Label>
                 <Input
                   placeholder="e.g. HDFC, ICICI"
                   value={bankName}
@@ -119,7 +145,9 @@ function PaymentMethodForm({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last 4 Digits</Label>
+                <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                  Last 4 Digits
+                </Label>
                 <Input
                   placeholder="e.g. 4532"
                   value={lastFour}
@@ -131,9 +159,13 @@ function PaymentMethodForm({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Credit Limit</Label>
+                <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                  Credit Limit
+                </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{CURRENCY_SYMBOL}</span>
+                  <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 text-xs">
+                    {CURRENCY_SYMBOL}
+                  </span>
                   <Input
                     type="number"
                     inputMode="decimal"
@@ -145,7 +177,9 @@ function PaymentMethodForm({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Billing Cycle Day</Label>
+                <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                  Billing Cycle Day
+                </Label>
                 <Input
                   type="number"
                   inputMode="numeric"
@@ -159,12 +193,16 @@ function PaymentMethodForm({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Current Outstanding
-                <span className="ml-1 normal-case tracking-normal text-muted-foreground/60">(existing balance before tracking)</span>
+                <span className="text-muted-foreground/60 ml-1 tracking-normal normal-case">
+                  (existing balance before tracking)
+                </span>
               </Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{CURRENCY_SYMBOL}</span>
+                <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 text-xs">
+                  {CURRENCY_SYMBOL}
+                </span>
                 <Input
                   type="number"
                   inputMode="decimal"
@@ -181,7 +219,9 @@ function PaymentMethodForm({
 
       {/* Icon picker */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Icon</Label>
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Icon
+        </Label>
         <div className="flex flex-wrap gap-1.5">
           {AVAILABLE_ICONS.map((ic) => (
             <button
@@ -192,7 +232,7 @@ function PaymentMethodForm({
                 "flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-all",
                 icon === ic.name
                   ? "border-primary bg-primary/10"
-                  : "border-transparent bg-muted/40 hover:bg-muted/70"
+                  : "bg-muted/40 hover:bg-muted/70 border-transparent"
               )}
               title={ic.label}
             >
@@ -204,7 +244,9 @@ function PaymentMethodForm({
 
       {/* Color picker */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Color</Label>
+        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Color
+        </Label>
         <div className="flex flex-wrap gap-1.5">
           {AVAILABLE_COLORS.map((c) => (
             <button
@@ -227,11 +269,11 @@ function PaymentMethodForm({
 
       {/* Preview + Submit */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/30 px-3 py-2 flex-1">
+        <div className="border-border/50 bg-muted/30 flex flex-1 items-center gap-2 rounded-xl border px-3 py-2">
           <CategoryIcon name={icon} color={color} size="sm" />
-          <span className="text-sm font-medium truncate">{name || "Preview"}</span>
+          <span className="truncate text-sm font-medium">{name || "Preview"}</span>
           {type === "CREDIT" && (
-            <span className="ml-auto text-[10px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+            <span className="text-primary bg-primary/10 ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold">
               CREDIT
             </span>
           )}
@@ -240,7 +282,7 @@ function PaymentMethodForm({
           <Button
             onClick={handleSubmit}
             disabled={isPending || !name.trim()}
-            className="rounded-xl gradient-primary hover:opacity-90 transition-opacity"
+            className="gradient-primary rounded-xl transition-opacity hover:opacity-90"
           >
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -326,8 +368,18 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
   };
 
   const accountLinks = [
-    { href: "/account/settings", label: "Profile Settings", icon: User, desc: "Manage your profile information" },
-    { href: "/account/security", label: "Security", icon: Shield, desc: "Password and authentication" },
+    {
+      href: "/account/settings",
+      label: "Profile Settings",
+      icon: User,
+      desc: "Manage your profile information",
+    },
+    {
+      href: "/account/security",
+      label: "Security",
+      icon: Shield,
+      desc: "Password and authentication",
+    },
   ];
 
   return (
@@ -338,11 +390,11 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
       className="mx-auto max-w-2xl space-y-5 p-4 md:p-8"
     >
       {/* Payment Methods */}
-      <Card className="overflow-hidden border-border/50">
+      <Card className="border-border/50 overflow-hidden">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base font-display font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <CreditCard className="h-4 w-4 text-primary" />
+          <CardTitle className="font-display flex items-center gap-2 text-base font-semibold">
+            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-lg">
+              <CreditCard className="text-primary h-4 w-4" />
             </div>
             Payment Methods
           </CardTitle>
@@ -363,17 +415,17 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
                   )}
                 >
                   <CategoryIcon name={pm.icon} color={pm.color} size="sm" />
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate">{pm.name}</span>
+                      <span className="truncate text-sm font-medium">{pm.name}</span>
                       {pm.type === "CREDIT" && (
-                        <span className="text-[10px] font-semibold text-primary bg-primary/10 rounded-full px-1.5 py-0.5 shrink-0">
+                        <span className="text-primary bg-primary/10 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
                           CREDIT
                         </span>
                       )}
                     </div>
                     {pm.bankName && (
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-muted-foreground text-[11px]">
                         {pm.bankName}
                         {pm.lastFourDigits && ` ••${pm.lastFourDigits}`}
                       </span>
@@ -384,7 +436,7 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
                       whileTap={{ scale: 0.8 }}
                       onClick={() => setEditingPm(pm)}
                       disabled={isPending}
-                      className="rounded-lg p-1.5 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors"
+                      className="text-muted-foreground/40 hover:text-primary hover:bg-primary/10 rounded-lg p-1.5 transition-colors"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </motion.button>
@@ -392,7 +444,7 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
                       whileTap={{ scale: 0.8 }}
                       onClick={() => handleDeletePaymentMethod(pm.id, pm.name)}
                       disabled={isPending}
-                      className="rounded-lg p-1.5 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      className="text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 rounded-lg p-1.5 transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </motion.button>
@@ -402,9 +454,11 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
             </AnimatePresence>
           </div>
 
-          <div className="border-t border-border/50" />
+          <div className="border-border/50 border-t" />
 
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add New</p>
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Add New
+          </p>
           <PaymentMethodForm
             onSubmit={handleAddPaymentMethod}
             isPending={isPending}
@@ -415,11 +469,11 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
 
       {/* Edit Payment Method Sheet */}
       <Sheet open={!!editingPm} onOpenChange={(open) => !open && setEditingPm(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh]">
+        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl">
           <SheetHeader>
             <SheetTitle className="font-display">Edit Payment Method</SheetTitle>
           </SheetHeader>
-          <div className="mt-4 mx-auto max-w-lg overflow-y-auto max-h-[65vh] pb-4">
+          <div className="mx-auto mt-4 max-h-[65vh] max-w-lg overflow-y-auto pb-4">
             {editingPm && (
               <PaymentMethodForm
                 key={editingPm.id}
@@ -434,11 +488,11 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
       </Sheet>
 
       {/* Create Label */}
-      <Card className="overflow-hidden border-border/50">
+      <Card className="border-border/50 overflow-hidden">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base font-display font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <Tag className="h-4 w-4 text-primary" />
+          <CardTitle className="font-display flex items-center gap-2 text-base font-semibold">
+            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-lg">
+              <Tag className="text-primary h-4 w-4" />
             </div>
             Create Label
           </CardTitle>
@@ -457,7 +511,7 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
                 onClick={handleAddTag}
                 size="icon"
                 disabled={isPending || !tagName.trim()}
-                className="rounded-xl gradient-primary hover:opacity-90 transition-opacity"
+                className="gradient-primary rounded-xl transition-opacity hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -467,9 +521,9 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
       </Card>
 
       {/* Account */}
-      <Card className="overflow-hidden border-border/50">
+      <Card className="border-border/50 overflow-hidden">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-display font-semibold">Account</CardTitle>
+          <CardTitle className="font-display text-base font-semibold">Account</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1 p-2">
           {accountLinks.map(({ href, label, icon: Icon, desc }, i) => (
@@ -481,16 +535,16 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
             >
               <Link
                 href={href}
-                className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-muted/60 group"
+                className="hover:bg-muted/60 group flex items-center gap-3 rounded-xl p-3 transition-colors"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted/80 group-hover:bg-muted transition-colors">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
+                <div className="bg-muted/80 group-hover:bg-muted flex h-10 w-10 items-center justify-center rounded-xl transition-colors">
+                  <Icon className="text-muted-foreground h-4 w-4" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">{label}</p>
-                  <p className="text-xs text-muted-foreground">{desc}</p>
+                  <p className="text-muted-foreground text-xs">{desc}</p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                <ChevronRight className="text-muted-foreground/50 group-hover:text-muted-foreground h-4 w-4 transition-colors" />
               </Link>
             </motion.div>
           ))}
