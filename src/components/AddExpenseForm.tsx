@@ -7,7 +7,7 @@ import { CalendarIcon, Check, Loader2, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { CURRENCY_SYMBOL } from "@/lib/constants";
+import { usePreferences } from "@/lib/preferences-context";
 import { autoGridCols } from "@/lib/grid";
 import { createExpense } from "@/lib/actions";
 import { CategoryIcon } from "@/components/CategoryIcon";
@@ -34,6 +34,7 @@ export function AddExpenseForm({
   creditMethods,
 }: AddExpenseFormProps) {
   const router = useRouter();
+  const { currencySymbol } = usePreferences();
   const [isPending, startTransition] = useTransition();
   const [showSuccess, setShowSuccess] = useState(false);
   const [mode, setMode] = useState<FormMode>("expense");
@@ -159,7 +160,7 @@ export function AddExpenseForm({
         </Label>
         <div className="relative">
           <span className="text-muted-foreground/60 absolute top-1/2 left-4 -translate-y-1/2 text-2xl font-semibold">
-            {CURRENCY_SYMBOL}
+            {currencySymbol}
           </span>
           <Input
             type="number"

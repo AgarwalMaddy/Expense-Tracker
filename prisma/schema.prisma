@@ -90,6 +90,16 @@ model Expense {
   @@map("expenses")
 }
 
+model UserPreference {
+  id       String @id @default(cuid())
+  userId   String @unique
+  currency String @default("INR")
+  timezone String @default("Asia/Kolkata")
+  locale   String @default("en-IN")
+
+  @@map("user_preferences")
+}
+
 model ExpenseTag {
   expenseId String
   tagId     String

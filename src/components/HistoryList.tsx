@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { CURRENCY_SYMBOL } from "@/lib/constants";
+import { usePreferences } from "@/lib/preferences-context";
 
 import { deleteExpense, getExpenses, updateExpense } from "@/lib/actions";
 import { CategoryIcon } from "@/components/CategoryIcon";
@@ -67,6 +67,7 @@ function EditExpenseSheet({
   onSave: (updated: ExpenseWithRelations) => void;
   onClose: () => void;
 }) {
+  const { currencySymbol } = usePreferences();
   const [isPending, startTransition] = useTransition();
   const [amount, setAmount] = useState(String(Number(expense.amount)));
   const [categoryId, setCategoryId] = useState(expense.categoryId);
@@ -130,7 +131,7 @@ function EditExpenseSheet({
         </Label>
         <div className="relative">
           <span className="text-muted-foreground/60 absolute top-1/2 left-3 -translate-y-1/2 text-lg font-semibold">
-            {CURRENCY_SYMBOL}
+            {currencySymbol}
           </span>
           <Input
             type="number"
@@ -333,6 +334,7 @@ export function HistoryList({
   paymentMethods,
   tags,
 }: HistoryListProps) {
+  const { currencySymbol, locale } = usePreferences();
   const [expenses, setExpenses] = useState<ExpenseWithRelations[]>(initialExpenses);
   const [count, setCount] = useState(total);
   const [search, setSearch] = useState("");
@@ -554,8 +556,8 @@ export function HistoryList({
                   {formatDateHeading(group.date)}
                 </h3>
                 <span className="text-muted-foreground text-xs font-semibold tabular-nums">
-                  {CURRENCY_SYMBOL}
-                  {group.dayTotal.toLocaleString("en-IN")}
+                  {currencySymbol}
+                  {group.dayTotal.toLocaleString(locale)}
                 </span>
               </div>
               <AnimatePresence mode="popLayout">
@@ -615,8 +617,8 @@ export function HistoryList({
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
                       <p className="text-sm font-semibold tabular-nums">
-                        {CURRENCY_SYMBOL}
-                        {Number(expense.amount).toLocaleString("en-IN")}
+                        {currencySymbol}
+                        {Number(expense.amount).toLocaleString(locale)}
                       </p>
                       <div className="flex items-center gap-1">
                         <motion.button

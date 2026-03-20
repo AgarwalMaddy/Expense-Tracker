@@ -17,13 +17,21 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { AVAILABLE_ICONS, AVAILABLE_COLORS, CURRENCY_SYMBOL } from "@/lib/constants";
+import {
+  AVAILABLE_ICONS,
+  AVAILABLE_COLORS,
+  CURRENCIES,
+  TIMEZONES,
+  getCurrencySymbol,
+} from "@/lib/constants";
 import {
   createTag,
   createPaymentMethod,
   deletePaymentMethod,
   updatePaymentMethod,
+  updateUserPreferences,
 } from "@/lib/actions";
+import type { CreatePaymentMethodInput } from "@/lib/validations";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,10 +39,19 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import Link from "next/link";
-import type { PaymentMethod } from "@/generated/prisma/client";
+import type { PaymentMethod, UserPreference } from "@/generated/prisma/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Globe, Coins } from "lucide-react";
 
 interface SettingsClientProps {
   initialPaymentMethods: PaymentMethod[];
+  initialPreferences: UserPreference;
 }
 
 function PaymentMethodForm({
@@ -42,6 +59,7 @@ function PaymentMethodForm({
   isPending,
   submitLabel,
   initial,
+  currencySymbol = "₹",
 }: {
   onSubmit: (data: {
     name: string;
@@ -57,6 +75,7 @@ function PaymentMethodForm({
   isPending: boolean;
   submitLabel: string;
   initial?: Partial<PaymentMethod>;
+  currencySymbol?: string;
 }) {
   const [name, setName] = useState(initial?.name || "");
   const [icon, setIcon] = useState(initial?.icon || "banknote");
@@ -164,7 +183,7 @@ function PaymentMethodForm({
                 </Label>
                 <div className="relative">
                   <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 text-xs">
-                    {CURRENCY_SYMBOL}
+                    {currencySymbol}
                   </span>
                   <Input
                     type="number"
@@ -201,7 +220,7 @@ function PaymentMethodForm({
               </Label>
               <div className="relative">
                 <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 text-xs">
-                  {CURRENCY_SYMBOL}
+                  {currencySymbol}
                 </span>
                 <Input
                   type="number"
@@ -299,12 +318,45 @@ function PaymentMethodForm({
   );
 }
 
-export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
+export function SettingsClient({ initialPaymentMethods, initialPreferences }: SettingsClientProps) {
   const router = useRouter();
   const [tagName, setTagName] = useState("");
   const [isPending, startTransition] = useTransition();
   const [paymentMethods, setPaymentMethods] = useState(initialPaymentMethods);
   const [editingPm, setEditingPm] = useState<PaymentMethod | null>(null);
+  const [currency, setCurrency] = useState(initialPreferences.currency);
+  const [timezone, setTimezone] = useState(initialPreferences.timezone);
+  const currencySymbol = getCurrencySymbol(currency);
+
+  const handleCurrencyChange = (value: string | null) => {
+    if (!value) return;
+    setCurrency(value);
+    startTransition(async () => {
+      try {
+        await updateUserPreferences({ currency: value });
+        toast.success(`Currency set to ${value}`);
+        router.refresh();
+      } catch {
+        toast.error("Failed to update currency");
+        setCurrency(initialPreferences.currency);
+      }
+    });
+  };
+
+  const handleTimezoneChange = (value: string | null) => {
+    if (!value) return;
+    setTimezone(value);
+    startTransition(async () => {
+      try {
+        await updateUserPreferences({ timezone: value });
+        toast.success("Timezone updated");
+        router.refresh();
+      } catch {
+        toast.error("Failed to update timezone");
+        setTimezone(initialPreferences.timezone);
+      }
+    });
+  };
 
   const handleAddTag = () => {
     if (!tagName.trim()) return;
@@ -319,7 +371,7 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
     });
   };
 
-  const handleAddPaymentMethod = (data: Parameters<typeof createPaymentMethod>[0]) => {
+  const handleAddPaymentMethod = (data: CreatePaymentMethodInput) => {
     startTransition(async () => {
       try {
         const pm = await createPaymentMethod(data);
@@ -332,7 +384,7 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
     });
   };
 
-  const handleEditPaymentMethod = (data: Parameters<typeof createPaymentMethod>[0]) => {
+  const handleEditPaymentMethod = (data: CreatePaymentMethodInput) => {
     if (!editingPm) return;
     startTransition(async () => {
       try {
@@ -463,6 +515,7 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
             onSubmit={handleAddPaymentMethod}
             isPending={isPending}
             submitLabel="Add"
+            currencySymbol={currencySymbol}
           />
         </CardContent>
       </Card>
@@ -481,6 +534,7 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
                 isPending={isPending}
                 submitLabel="Save"
                 initial={editingPm}
+                currencySymbol={currencySymbol}
               />
             )}
           </div>
@@ -516,6 +570,57 @@ export function SettingsClient({ initialPaymentMethods }: SettingsClientProps) {
                 <Plus className="h-4 w-4" />
               </Button>
             </motion.div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preferences */}
+      <Card className="border-border/50 overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-display flex items-center gap-2 text-base font-semibold">
+            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-lg">
+              <Coins className="text-primary h-4 w-4" />
+            </div>
+            Preferences
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              Currency
+            </Label>
+            <Select value={currency} onValueChange={handleCurrencyChange}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    {c.symbol} {c.name} ({c.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              Timezone
+            </Label>
+            <Select value={timezone} onValueChange={handleTimezoneChange}>
+              <SelectTrigger className="rounded-xl">
+                <div className="flex items-center gap-2">
+                  <Globe className="text-muted-foreground h-3.5 w-3.5" />
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONES.map((tz) => (
+                  <SelectItem key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

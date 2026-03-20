@@ -52,4 +52,38 @@ export const AVAILABLE_COLORS = [
   "#84cc16",
 ] as const;
 
+export const CURRENCIES = [
+  { code: "INR", symbol: "₹", name: "Indian Rupee", locale: "en-IN" },
+  { code: "USD", symbol: "$", name: "US Dollar", locale: "en-US" },
+  { code: "EUR", symbol: "€", name: "Euro", locale: "de-DE" },
+  { code: "GBP", symbol: "£", name: "British Pound", locale: "en-GB" },
+  { code: "AED", symbol: "د.إ", name: "UAE Dirham", locale: "ar-AE" },
+  { code: "SGD", symbol: "S$", name: "Singapore Dollar", locale: "en-SG" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar", locale: "en-AU" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar", locale: "en-CA" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen", locale: "ja-JP" },
+] as const;
+
+export const TIMEZONES = [
+  { value: "Asia/Kolkata", label: "IST (India)" },
+  { value: "America/New_York", label: "EST (New York)" },
+  { value: "America/Chicago", label: "CST (Chicago)" },
+  { value: "America/Los_Angeles", label: "PST (Los Angeles)" },
+  { value: "Europe/London", label: "GMT (London)" },
+  { value: "Europe/Berlin", label: "CET (Berlin)" },
+  { value: "Asia/Dubai", label: "GST (Dubai)" },
+  { value: "Asia/Singapore", label: "SGT (Singapore)" },
+  { value: "Asia/Tokyo", label: "JST (Tokyo)" },
+  { value: "Australia/Sydney", label: "AEST (Sydney)" },
+  { value: "Pacific/Auckland", label: "NZST (Auckland)" },
+] as const;
+
+export function getCurrencySymbol(code: string): string {
+  return CURRENCIES.find((c) => c.code === code)?.symbol ?? code;
+}
+
+export function getCurrencyLocale(code: string): string {
+  return CURRENCIES.find((c) => c.code === code)?.locale ?? "en-IN";
+}
+
 export const CURRENCY_SYMBOL = "₹";

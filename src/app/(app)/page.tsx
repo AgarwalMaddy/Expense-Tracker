@@ -1,8 +1,8 @@
-import { getDashboardData, getCreditCardSummary } from "@/lib/actions";
+import { getDashboardData, getCreditCardSummary, getUserPreferences } from "@/lib/actions";
+import { getCurrencySymbol, getCurrencyLocale } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryPieChart, PaymentBreakdown } from "@/components/DashboardCharts";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { CURRENCY_SYMBOL } from "@/lib/constants";
 import { format } from "date-fns";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, Receipt, Wallet, CreditCard, ArrowLeftRight } from "lucide-react";
@@ -11,8 +11,14 @@ import { DashboardClient } from "@/components/DashboardClient";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [data, creditSummary] = await Promise.all([getDashboardData(), getCreditCardSummary()]);
+  const [data, creditSummary, prefs] = await Promise.all([
+    getDashboardData(),
+    getCreditCardSummary(),
+    getUserPreferences(),
+  ]);
   const monthLabel = format(new Date(), "MMMM yyyy");
+  const sym = getCurrencySymbol(prefs.currency);
+  const loc = getCurrencyLocale(prefs.currency);
 
   return (
     <DashboardClient>
@@ -27,8 +33,8 @@ export default async function DashboardPage() {
           <div className="relative">
             <p className="text-muted-foreground text-sm font-medium">{monthLabel}</p>
             <p className="font-display mt-1 text-4xl font-bold tracking-tight md:text-5xl">
-              {CURRENCY_SYMBOL}
-              {data.totalSpent.toLocaleString("en-IN")}
+              {sym}
+              {data.totalSpent.toLocaleString(loc)}
             </p>
             <p className="text-muted-foreground mt-2 text-sm">
               across {data.transactionCount} transaction{data.transactionCount !== 1 ? "s" : ""}
@@ -48,8 +54,8 @@ export default async function DashboardPage() {
                   Total
                 </p>
                 <p className="font-display text-lg font-bold tracking-tight tabular-nums">
-                  {CURRENCY_SYMBOL}
-                  {data.totalSpent.toLocaleString("en-IN")}
+                  {sym}
+                  {data.totalSpent.toLocaleString(loc)}
                 </p>
               </div>
             </CardContent>
@@ -84,9 +90,9 @@ export default async function DashboardPage() {
                   Average
                 </p>
                 <p className="font-display text-lg font-bold tracking-tight tabular-nums">
-                  {CURRENCY_SYMBOL}
+                  {sym}
                   {data.transactionCount > 0
-                    ? Math.round(data.totalSpent / data.transactionCount).toLocaleString("en-IN")
+                    ? Math.round(data.totalSpent / data.transactionCount).toLocaleString(loc)
                     : "0"}
                 </p>
               </div>
@@ -119,21 +125,20 @@ export default async function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold tabular-nums">
-                        {CURRENCY_SYMBOL}
-                        {cs.outstanding.toLocaleString("en-IN")}
+                        {sym}
+                        {cs.outstanding.toLocaleString(loc)}
                       </p>
                       <p className="text-muted-foreground text-[10px]">outstanding</p>
                     </div>
                   </div>
 
-                  {/* Utilization bar */}
                   {cs.creditLimit > 0 && cs.utilization !== null && (
                     <div className="space-y-1">
                       <div className="text-muted-foreground flex justify-between text-[10px]">
                         <span>
-                          {CURRENCY_SYMBOL}
-                          {cs.outstanding.toLocaleString("en-IN")} / {CURRENCY_SYMBOL}
-                          {cs.creditLimit.toLocaleString("en-IN")}
+                          {sym}
+                          {cs.outstanding.toLocaleString(loc)} / {sym}
+                          {cs.creditLimit.toLocaleString(loc)}
                         </span>
                         <span
                           className={cs.utilization > 80 ? "text-destructive font-semibold" : ""}
@@ -158,22 +163,21 @@ export default async function DashboardPage() {
                     </div>
                   )}
 
-                  {/* Spent / Settled row */}
                   <div className="flex gap-4 text-xs">
                     <div className="flex items-center gap-1.5">
                       <Receipt className="text-muted-foreground h-3 w-3" />
                       <span className="text-muted-foreground">Spent:</span>
                       <span className="font-semibold tabular-nums">
-                        {CURRENCY_SYMBOL}
-                        {cs.totalSpent.toLocaleString("en-IN")}
+                        {sym}
+                        {cs.totalSpent.toLocaleString(loc)}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <ArrowLeftRight className="text-muted-foreground h-3 w-3" />
                       <span className="text-muted-foreground">Settled:</span>
                       <span className="font-semibold text-emerald-600 tabular-nums">
-                        {CURRENCY_SYMBOL}
-                        {cs.totalSettled.toLocaleString("en-IN")}
+                        {sym}
+                        {cs.totalSettled.toLocaleString(loc)}
                       </span>
                     </div>
                   </div>
@@ -258,8 +262,8 @@ export default async function DashboardPage() {
                         </p>
                       </div>
                       <p className="text-sm font-semibold tabular-nums">
-                        {CURRENCY_SYMBOL}
-                        {Number(expense.amount).toLocaleString("en-IN")}
+                        {sym}
+                        {Number(expense.amount).toLocaleString(loc)}
                       </p>
                     </div>
                   ))}

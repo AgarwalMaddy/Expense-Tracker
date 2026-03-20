@@ -1,7 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { CURRENCY_SYMBOL } from "@/lib/constants";
+import { usePreferences } from "@/lib/preferences-context";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { motion } from "framer-motion";
 
@@ -28,6 +28,8 @@ const tooltipStyle = {
 };
 
 export function CategoryPieChart({ data }: { data: CategoryData[] }) {
+  const { currencySymbol, locale } = usePreferences();
+
   if (data.length === 0) {
     return (
       <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
@@ -57,7 +59,7 @@ export function CategoryPieChart({ data }: { data: CategoryData[] }) {
           </Pie>
           <Tooltip
             {...tooltipStyle}
-            formatter={(value) => `${CURRENCY_SYMBOL}${Number(value).toLocaleString("en-IN")}`}
+            formatter={(value) => `${currencySymbol}${Number(value).toLocaleString(locale)}`}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -76,8 +78,8 @@ export function CategoryPieChart({ data }: { data: CategoryData[] }) {
               <CategoryIcon name={entry.category.icon} color={entry.category.color} size="sm" />
               <span className="flex-1 truncate font-medium">{entry.category.name}</span>
               <span className="font-semibold tabular-nums">
-                {CURRENCY_SYMBOL}
-                {entry.total.toLocaleString("en-IN")}
+                {currencySymbol}
+                {entry.total.toLocaleString(locale)}
               </span>
             </motion.div>
           ))}
@@ -87,6 +89,7 @@ export function CategoryPieChart({ data }: { data: CategoryData[] }) {
 }
 
 export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
+  const { currencySymbol, locale } = usePreferences();
   const total = data.reduce((sum, d) => sum + d.total, 0);
 
   if (total === 0) {
@@ -124,8 +127,8 @@ export function PaymentBreakdown({ data }: { data: PaymentData[] }) {
                   <span className="truncate font-medium">{pm.name}</span>
                 </span>
                 <span className="ml-2 shrink-0 font-semibold tabular-nums">
-                  {CURRENCY_SYMBOL}
-                  {entry.total.toLocaleString("en-IN")}
+                  {currencySymbol}
+                  {entry.total.toLocaleString(locale)}
                   <span className="text-muted-foreground ml-1.5 text-xs font-normal">({pct}%)</span>
                 </span>
               </div>
